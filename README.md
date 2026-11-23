@@ -80,8 +80,10 @@ Legenda: `[ ]` pendente · `[x]` concluído.
 
 ### Fase 0 — Spike (bloqueia a Fase 1)
 
-- [ ] Obter 3 a 5 arquivos `.vce` e 3 a 5 PDFs de simulado reais, de origens e versões diferentes (em `samples/`, fora do git)
-- [ ] Testar o VCE e decidir entre: suporte direto, só via PDF exportado, ou inviável
+- [x] Receber arquivos `.vce` de exemplo (4 recebidos; ver `docs/SPIKE-VCE.md`)
+- [ ] Obter 3 a 5 PDFs de simulado reais, de origens e versões diferentes (em `samples/`, fora do git)
+- [x] Classificar os `.vce` recebidos: resultado provisório **(b) somente via PDF exportado** (`docs/SPIKE-VCE.md`)
+- [ ] Confirmar o resultado do VCE exportando um dos `.vce` para PDF no app original
 - [ ] Testar extração de PDF com `pdfplumber` e `pypdfium2` nos exemplos
 - [ ] Medir a taxa de questões extraídas corretamente e fechar o gate de qualidade
 - [ ] Converter as descobertas em casos de teste com fixtures sintéticas
