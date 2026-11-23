@@ -31,7 +31,7 @@ A busca por ProfExam, Boson ExSim e Anki não retornou resultados úteis. O que 
 
 ### Questão legal (não é aconselhamento jurídico)
 
-A busca não localizou o texto dos termos da Avanset sobre engenharia reversa. Os termos estão em [avanset.com/terms-and-conditions.html](https://www.avanset.com/terms-and-conditions.html) e precisam ser lidos. Há relatos não verificados de que muitos `.vce` em circulação são conteúdo de exame vazado ("dumps"), o que reforça as regras do produto: sem dumps embutidos, sem compartilhamento entre contas, atestado de direito de uso no upload.
+A busca não localizou o texto dos termos da Avanset sobre engenharia reversa. Os termos estão em [avanset.com/terms-and-conditions.html](https://www.avanset.com/terms-and-conditions.html) e precisam ser lidos. Há relatos não verificados de que muitos `.vce` em circulação são conteúdo de exame vazado ("dumps"), o que reforça as regras do produto: sem dumps embutidos, sem compartilhamento de bancos e um aviso de direito de uso no primeiro uso.
 
 ## 3. Taxa de sucesso estimada
 
@@ -72,7 +72,7 @@ Critérios: **Viabilidade** (técnica), **Valor** (para o objetivo), **Risco** (
 | Cartão de referência para tipos não pontuados | A | Alta | Médio | Baixo | Evita descartar conteúdo |
 | Perfis de exame como dados | A | Alta | Médio | Baixo | Só com fonte oficial |
 | Exportar o banco (JSON/CSV) | A | Alta | Médio | Baixo | Reduz lock-in |
-| Atestado de direito de uso no upload | A | Alta | Médio | Baixo | Mitigação legal |
+| Aviso de direito de uso no primeiro uso | A | Alta | Baixo | Baixo | Para uso pessoal basta um aviso |
 | Percentual real + estimativa de nota escalonada rotulada | A | Média | Médio | Médio | Nunca prometer a nota oficial |
 | Aiken, GIFT, Moodle XML | B | Alta | Médio | Baixo | Formatos abertos |
 | HTML, DOCX | B | Média | Médio | Médio | Parsing de estrutura |
@@ -87,7 +87,7 @@ Critérios: **Viabilidade** (técnica), **Valor** (para o objetivo), **Risco** (
 | Simulações de laboratório | D | Baixa | Médio | Alto | Fora de escopo |
 | Geração de questões por IA | D | n/a | n/a | n/a | Descartada pelo usuário |
 | Quebra de senha/DRM de `.vce` | D | n/a | n/a | Legal | Não será implementada |
-| Biblioteca compartilhada de simulados entre contas | D | Média | Médio | Legal | Incentiva dumps; contraria a regra do produto |
+| Compartilhar ou publicar bancos de simulados | D | Média | Médio | Legal | Incentiva dumps; fora do escopo pessoal |
 | Conteúdo de exame embutido | D | n/a | n/a | Legal | Contraria a regra do produto |
 
 ## 5. Pontos que o usuário precisa decidir

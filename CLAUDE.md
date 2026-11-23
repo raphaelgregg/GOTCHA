@@ -12,14 +12,16 @@ Projeto: GOTCHA, importador de simulados de certificação com exames cronometra
 1. **Nenhuma IA.** Não adicionar bibliotecas, chamadas ou serviços de IA/LLM. Nenhum conteúdo de questão, alternativa, gabarito ou explicação é gerado por modelo.
 2. **Nada entra no banco sem revisão.** Importadores gravam apenas rascunhos; só a confirmação do lote cria questões.
 3. **Formato detectado pelo conteúdo**, nunca pela extensão.
-4. **Servidor decide tempo e correção.** O gabarito não é enviado ao cliente antes da hora.
+4. **O backend decide tempo e correção.** Em modo prova o gabarito não é enviado à interface antes do fim; o modo estudo mostra a resposta.
 5. **Sem DRM/criptografia.** Não implementar quebra de senha, criptografia ou proteção de formatos (incluindo VCE). Arquivo protegido é recusado com orientação.
-6. **Sem dumps.** Não embutir conteúdo de exame no repositório nem compartilhar bancos entre contas. Arquivos de amostra ficam em `samples/`, ignorada pelo git, e nunca são commitados.
-7. **Não usar PyMuPDF** (AGPL). Usar `pdfplumber` e `pypdfium2`.
+6. **Sem dumps.** Não embutir conteúdo de exame no repositório nem criar qualquer forma de compartilhar ou publicar bancos. Arquivos de amostra ficam em `samples/`, ignorada pelo git, e nunca são commitados.
+7. **Uso pessoal, local e de usuário único.** Sem contas, sem autenticação multiusuário, sem hospedagem online, sem telemetria. O servidor escuta só em `127.0.0.1`.
+8. **Interface própria.** Inspirada no fluxo do VCE Player (ver `docs/REQUISITOS-UI.md`), sem copiar logotipo, nome, cores de marca ou arte da Avanset.
+9. **Não usar PyMuPDF** (AGPL). Usar `pdfplumber` e `pypdfium2`.
 
 ## Stack
 
-React + Vite (SPA), FastAPI, PostgreSQL (dados, isolamento e fila de jobs), Docker Compose, monólito modular. Gerenciador Python: `uv`.
+React + Vite (SPA servida pelo backend), FastAPI, SQLite (dados e fila de jobs), monólito modular, execução local. Docker Compose é opcional (só conveniência de desenvolvimento). Gerenciador Python: `uv`.
 
 ## Desenvolvimento orientado a testes (obrigatório)
 
@@ -50,7 +52,8 @@ uv run pytest
 
 - Arquivos enviados são não confiáveis: processar em subprocesso com limites de tempo e memória, sem acesso à rede.
 - Nunca commitar segredos. Usar `.env` (ignorado) e manter `.env.example` atualizado.
-- Dados sempre isolados por usuário.
+- Escutar só em `127.0.0.1`; validar `Host` e `Origin` e usar token anti-CSRF, para que sites abertos no navegador não acessem a API local.
+- Sanitizar todo HTML de enunciados importados antes de renderizar.
 
 ## Dados de domínio
 
