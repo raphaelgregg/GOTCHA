@@ -176,7 +176,7 @@ Cada bloco começa pelos testes.
 
 ### Fase 1C — Multimídia e tipos interativos (requisito adicional, aprovada e implementada)
 
-Desenho, testes e **estado da implementação** em [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md) (seção 18). Itens pendentes: extração de imagens do PDF (E), galeria de mídia, alvos do Drag and Drop sobre imagem e adaptador QTI. Ordem seguida:
+Desenho, testes e **estado da implementação** em [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md) (seção 18). Itens pendentes: galeria de mídia, alvos do Drag and Drop sobre imagem, captura de gráficos vetoriais do PDF e adaptador QTI. Ordem seguida:
 
 1. **A**: modelo canônico v2, registro de tipos, loja de recursos com hash, pacote `.gotcha` e migração.
 2. **B**: portar múltipla escolha e seleção; Build List; Drag and Drop; Hot Area com editor de regiões.
