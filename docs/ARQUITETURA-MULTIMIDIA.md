@@ -318,3 +318,32 @@ Sem serviços externos. Dependências novas previstas: **Pillow** (dimensões e 
 4. `.gotcha` como **ZIP aberto e documentado**, sem criptografia. Aprovado?
 5. **Ordem das fases**: A, B, C, D, E, F, G, ou você prioriza outra (por exemplo, Active Screen antes do editor universal)?
 6. Para Lab `real`: confirmo que o GOTCHA **só guarda instruções** e nunca executa nem se conecta a infraestrutura de terceiros?
+
+## 17. Validação de alternativas e decisões aprovadas
+
+Você aprovou as seis decisões da seção 16 e pediu que eu conferisse se existe solução mais adequada antes de implementar. Conclusão por item (padrões citados vêm do meu conhecimento; **não os reverifiquei nesta sessão**, só o que está marcado como testado):
+
+| Tema | Alternativa avaliada | Decisão |
+| --- | --- | --- |
+| Formato de troca de questões | **IMS QTI 3.0** (padrão de avaliações; tem interações de escolha, ordenação, associação, hotspot, "graphic gap match" e estímulo compartilhado, que correspondem aos nossos tipos) | **Manter o `.gotcha` como formato nativo** (Active Screen e Lab não existem em QTI) e **acrescentar QTI 3.0 como adaptador de importação e exportação** no Release 2, para interoperar com Moodle e outros. Registrado no TODO |
+| Contêiner do pacote | Arquivo SQLite único (como o Anki) | **ZIP + JSON**: legível, comparável e extraível sem ferramenta. O Anki usa ZIP com banco e mídia por hash, o que confirma a abordagem de mídia por hash |
+| Linguagem de condições do Active Screen | Inventar uma sintaxe própria × **JSON Logic** (formato JSON declarativo e sem código executável) | **Adotar a sintaxe do JSON Logic** (`{"and": [{"==": [{"var": "ip"}, "10.0.0.5"]}]}`) com um **avaliador próprio mínimo e em lista fechada**, sem dependência externa. Ganha-se um formato conhecido e portável sem confiar em biblioteca de terceiros para entrada não confiável |
+| Máquina de estados das telas | XState (MIT) | **Não adotar**: o motor próprio é pequeno (telas, ações, condições) e precisa rodar **igual** no Python e no navegador. Garanto a paridade com vetores de teste compartilhados |
+| Arrastar e soltar | Implementação própria × **`@dnd-kit`** (MIT, gratuito, com sensores de teclado e toque) | **Adotar `@dnd-kit`**: acessibilidade e toque prontos reduzem risco e esforço. Corrige a minha proposta anterior de fazer tudo à mão |
+| Sanitização de SVG | `nh3` (sanitizador de HTML) | **Não usar `nh3` para SVG**: usar `lxml` com lista de elementos e atributos permitidos, e exibir SVG **só por `<img>`** (scripts não executam nesse contexto) mais CSP restritiva |
+| Dimensões e validação de imagem | Biblioteca mínima só para tamanho (`imagesize`) × **Pillow** | **Pillow**: além de dimensões, verifica decodificação e aplica o limite contra *decompression bomb* |
+| Tipos TS a partir do backend | Manter dois modelos à mão | **Gerar JSON Schema do Pydantic e os tipos TS no build**, para não divergirem |
+| Editor de regiões | Biblioteca de canvas (Konva, Fabric) | **SVG com eventos de ponteiro, sem biblioteca**: são poucas formas e o ganho de uma dependência não compensa |
+
+### Formato "INDEX"
+
+Confirmado como **HTML salvo de sites de questões**. Já é coberto pelo importador de HTML (inclusive o arquivo `index.html` de uma página salva). O arquivo recebido é idêntico à página 1 já analisada e as imagens continuam relativas a uma pasta que não veio: para importá-las, envie a página **com a pasta de recursos em ZIP**. Para outros sites, o importador passa a ter **adaptadores por estrutura** (hoje: ExamTopics), cada um com seus testes.
+
+### Decisões aprovadas
+
+1. `self_assessed` como tipo de transição: **sim**.
+2. Hot Area em dois modos (região clicável e menus suspensos via Active Screen): **sim**.
+3. INDEX = HTML de sites de questões: **definido acima**.
+4. `.gotcha` como ZIP aberto e documentado: **sim**.
+5. Ordem das fases A a G: **sim**.
+6. Lab `real` só guarda instruções: **sim**.
