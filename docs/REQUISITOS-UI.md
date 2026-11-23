@@ -49,3 +49,19 @@ Cada requisito abaixo vira caso de teste antes de ser implementado (ver `PLAN.md
 1. Estilo de revisão: o menu `Revisar` do VCE abre um menu suspenso; uma tela de lista dedicada pode ser mais simples de testar.
 2. Em modo prova, "Mostrar resposta" some ou fica desabilitado? Recomendação: some, para o gabarito não chegar à interface.
 3. Tempo restante deve pausar ao salvar a sessão? Recomendação: sim, com pausa explícita registrada.
+
+## 5. Gerador de simulado e tipos interativos (adicionado após as amostras HTML/TXT)
+
+| # | Requisito | Prio. | Critério de aceitação (resumo) |
+| --- | --- | --- | --- |
+| G1 | Tela **Novo simulado**: escolher exames e tópicos | A | Só lista exames com questões confirmadas |
+| G2 | Quantidade de questões, ordem aleatória com **semente** | A | Mesma semente gera a mesma ordem |
+| G3 | Filtros: só erradas, só marcadas, só não respondidas | A | Filtra com base no histórico |
+| G4 | Escolher modo (estudo ou prova) e tempo | A | Cria a sessão com o modo escolhido |
+| G5 | Salvar e reutilizar a definição do simulado | A | Reabre com os mesmos parâmetros |
+| G6 | Excluir ou incluir tipos interativos no simulado | A | Respeita a escolha |
+| I1 | Questão interativa mostra enunciado e exhibit, sem opções | A (1B) | Sem alternativas na tela |
+| I2 | **Revelar** a imagem da resposta e marcar "acertei/errei" | A (1B) | Autoavaliação registrada |
+| I3 | Resultado separa pontuação **automática** e **autoavaliada** | A (1B) | Dois percentuais distintos |
+| I4 | Questão com "anexo ausente" sinalizada | A (1B) | Aviso claro; não quebra a prova |
+| I5 | Estudo de caso: painel com o contexto compartilhado e navegação entre as questões do caso | A (1B) | Contexto exibido uma vez |

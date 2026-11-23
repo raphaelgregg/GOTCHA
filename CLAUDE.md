@@ -9,7 +9,7 @@ Projeto: GOTCHA, importador de simulados de certificação com exames cronometra
 
 ## Regras de produto (não negociáveis)
 
-1. **Nenhuma IA.** Não adicionar bibliotecas, chamadas ou serviços de IA/LLM. Nenhum conteúdo de questão, alternativa, gabarito ou explicação é gerado por modelo.
+1. **Nenhuma IA.** Não adicionar bibliotecas, chamadas ou serviços de IA/LLM. Nenhum conteúdo de questão, alternativa, gabarito ou explicação é gerado por modelo. "Gerar simulado" significa **montar** o exame a partir de questões já importadas (filtros, quantidade, sorteio por semente); o app "entende" os arquivos por análise determinística.
 2. **Nada entra no banco sem revisão.** Importadores gravam apenas rascunhos; só a confirmação do lote cria questões.
 3. **Formato detectado pelo conteúdo**, nunca pela extensão.
 4. **O backend decide tempo e correção.** Em modo prova o gabarito não é enviado à interface antes do fim; o modo estudo mostra a resposta.

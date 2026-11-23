@@ -9,9 +9,13 @@ Plano de implementação refinado. Escopo e decisões vêm do planejamento origi
 
 ## 1. Objetivo
 
-Aplicativo de **uso pessoal**: o usuário importa exames (simulados) de vários formatos e faz testes para treinar certificações.
+Aplicativo de **uso pessoal**: o usuário importa exames (simulados) de vários formatos, **todos os tipos de questão incluídos**, e monta simulados a partir deles para treinar certificações.
 
-**Critério de sucesso:** arquivo de simulado → revisão → exame cronometrado.
+**Formatos a importar (todos no escopo):** HTML salvo, TXT simples, JSON do app, CSV/XLSX e PDF, mais o VCE se o spike permitir. Exemplos reais já recebidos estão analisados em `docs/SPIKE-HTML.md` e `docs/SPIKE-VCE.md`.
+
+**"Entender e gerar simulados":** o sistema **entende** os arquivos por análise determinística (sem IA) e **gera o simulado** montando-o a partir do banco importado: escolhe exames e tópicos, quantidade, ordem aleatória reproduzível, só erradas ou marcadas, modo e tempo. Nenhuma questão é criada por modelo.
+
+**Critério de sucesso:** arquivos de simulado → revisão → simulado montado → exame cronometrado.
 
 **Fora de escopo:** geração de conteúdo por IA, quebra de proteção/DRM, conteúdo de exame embutido, contas/multiusuário, hospedagem online, compartilhamento de bancos, simulações de laboratório.
 
@@ -42,8 +46,12 @@ Estimativas de julgamento, ainda não medidas (detalhes em `docs/VALIDACAO.md`):
 
 | Escopo | Estimativa |
 | --- | --- |
-| Produto sem VCE (JSON/CSV/PDF → revisão → exame) | ≈ 85 a 90% (subiu um pouco: menos infraestrutura) |
+| Produto sem VCE (HTML/TXT/JSON/CSV/PDF → revisão → simulado → exame) | ≈ 80 a 85% (escopo maior que antes) |
+| TXT simples e JSON | 90 a 95% |
+| HTML salvo, questões com alternativas | 85 a 90% (frágil a mudanças no site) |
 | PDF com texto, utilizável após revisão manual | 80 a 85% |
+| Tipos interativos (hot area, arrastar-e-soltar) com autoavaliação | 70 a 80%; **depende de as imagens virem junto** |
+| Gerador de simulado a partir do banco | ≈ 95% |
 | VCE direto | 10 a 20% |
 | VCE via PDF exportado do app original | 45 a 60% |
 | "Meus `.vce` viram exames" por qualquer caminho | ≈ 50 a 60% |
@@ -69,6 +77,13 @@ O maior risco é a premissa de partida (VCE). O spike da Fase 0 substitui estima
 | 13 | Conteúdo rico nas questões: HTML sanitizado, tabelas, código e imagens (exhibits) | Telas de referência mostram tabelas e SQL no enunciado |
 | 14 | Desenvolvimento orientado a testes, com fixtures sintéticas | Seção 5 |
 | 15 | Interface inspirada no fluxo do VCE Player, **sem copiar marca, logotipo ou arte da Avanset** | Evitar problema de marca |
+| 16 | **Todos os formatos recebidos entram no escopo**: HTML salvo, TXT simples, JSON, CSV/XLSX, PDF | Pedido do usuário; amostras reais analisadas |
+| 17 | Chave de questão = **(exame, tópico, número)**; vários arquivos podem alimentar o mesmo exame, com deduplicação | Numeração reinicia por tópico e o exame se espalha por páginas |
+| 18 | **Estudo de caso** como entidade própria, com contexto compartilhado | Evita repetir o texto em cada questão |
+| 19 | **Tipos interativos importados** com enunciado, exhibits e imagem da resposta, pontuados por **autoavaliação** ("revelar e marcar") | Cerca de metade das questões das amostras é desse tipo; sem motor de correção |
+| 20 | Resultado separa **pontuação automática** e **autoavaliada** | Não misturar nota objetiva com nota declarada |
+| 21 | Entrada aceita **ZIP** (página + pasta de recursos) e arquivo único; imagem ausente marca "anexo ausente" | As imagens das páginas salvas ficam em pasta à parte |
+| 22 | **Gerador de simulado** a partir do banco, com sorteio reproduzível por semente | Testável e repetível |
 
 Todas ficam como **Proposta** até aprovação do usuário.
 
@@ -126,24 +141,34 @@ O spike é exploratório: seu código é **descartável** e não entra no produt
 
 Arquivo protegido é recusado com orientação de exportar pelo app original. Não implementar quebra de senha, criptografia ou DRM.
 
-### Fase 1 — MVP (camada A)
+### Fase 1 — MVP (camada A), em duas entregas
 
-Formatos: JSON do app, CSV/XLSX, PDF com texto e imagens. Tipos pontuados: múltipla escolha, múltipla resposta (com quantidade exata, "Select THREE"), verdadeiro/falso. Demais tipos viram cartão de referência ou são ignorados.
+Tipos corrigidos automaticamente: múltipla escolha, múltipla resposta (quantidade exata, "Select THREE"), verdadeiro/falso. Tipos interativos (hot area, arrastar-e-soltar, simulação, Sim/Não) são importados e pontuados por **autoavaliação**.
 
-Blocos, cada um iniciado pelos testes:
+Cada bloco começa pelos testes.
+
+**Entrega 1A — núcleo utilizável (sem imagens)**
 
 1. **Fundação:** scaffold local, CI com os gates, modelo de dados SQLite, segurança local (localhost, Host/Origin, CSRF).
-2. **Núcleo de domínio:** tipos de questão, corretores, cálculo de nota (maior valor, menor risco).
-3. **Importação:** interface de plugin e suíte de contrato, seleção de vários arquivos, lote por arquivo, fila de jobs, worker sem rede, importadores do MVP.
-4. **Revisão:** rascunhos, dividir, mesclar, reatribuir alternativas e gabarito, confirmar lote, desfazer.
-5. **Biblioteca:** lista de exames (adicionar, renomear, remover, propriedades, histórico), várias provas por arquivo.
-6. **Exame:** perfis como dados, modos estudo e prova, marcar questão, revisar, mostrar lista, exhibit, salvar e retomar sessão, resultado com percentual real e estimativa rotulada.
-7. **Dados:** exportar e importar o banco (JSON), aviso de direito de uso no primeiro uso.
+2. **Núcleo de domínio:** tipos de questão, corretores, cálculo de nota, chave (exame, tópico, número).
+3. **Importação:** interface de plugin e suíte de contrato, vários arquivos, lote por arquivo, fila de jobs, worker sem rede. Importadores: **TXT simples, JSON, CSV/XLSX, HTML salvo (questões com alternativas)**.
+4. **Revisão:** rascunhos, dividir, mesclar, reatribuir alternativas e gabarito, confirmar lote, desfazer, **agrupar vários arquivos no mesmo exame com deduplicação**.
+5. **Biblioteca:** lista de exames (adicionar, renomear, remover, propriedades, histórico).
+6. **Gerador de simulado:** escolher exames e tópicos, quantidade, ordem aleatória por semente, só erradas ou marcadas, salvar a definição.
+7. **Exame:** modos estudo e prova, marcar, revisar, lista, salvar e retomar, cronômetro, resultado com percentual real e estimativa rotulada.
+
+**Entrega 1B — imagens, interativos e PDF**
+
+8. **Anexos:** entrada em ZIP e arquivo único, imagens associadas às questões, "anexo ausente", exhibit com zoom.
+9. **Estudo de caso:** entidade com contexto compartilhado.
+10. **Tipos interativos:** importar enunciado, exhibits e imagem da resposta; modo "revelar e autoavaliar"; resultado separando automática e autoavaliada.
+11. **PDF:** extração de texto e imagens com `pdfplumber` e `pypdfium2`, ferramentas de revisão para layouts irregulares.
+12. **Dados:** exportar e importar o banco (JSON), aviso de direito de uso no primeiro uso.
 
 ### Fase 2 — Release 2 (camada B, mais C se aprovada)
 
-- Aiken, GIFT, Moodle XML; HTML, DOCX, QTI, OCR.
-- Tipos avançados; estatísticas por tema; revisão espaçada.
+- Aiken, GIFT, Moodle XML; DOCX, QTI, OCR.
+- Correção automática de tipos interativos (hoje por autoavaliação); estatísticas por tema; revisão espaçada.
 - Empacotamento como aplicativo desktop (Tauri ou similar).
 - VCE direto, se o spike aprovar.
 
@@ -151,10 +176,12 @@ Blocos, cada um iniciado pelos testes:
 
 | Escopo | Esforço (dias úteis, 1 pessoa) |
 | --- | --- |
-| MVP sem VCE direto | **45 a 72** (antes 58 a 87; saíram autenticação, isolamento, hospedagem e PostgreSQL) |
+| Entrega 1A (núcleo, TXT/JSON/CSV/HTML sem imagens, gerador, exame) | 38 a 60 |
+| Entrega 1B (anexos, estudo de caso, interativos, PDF) | 27 a 45 |
+| **MVP completo, sem VCE direto** | **65 a 105** (antes 45 a 72; o escopo cresceu: HTML, TXT, multipágina, interativos, gerador) |
 | VCE direto (adicional, se aprovado) | 8 a 25 |
 
-A redução é julgamento, não medição. As faixas assumem testes. O spike as estreita.
+São estimativas de julgamento, não medições, e assumem testes. O que mais move a faixa é o PDF e a qualidade das imagens. Entregar em duas etapas permite usar o app já depois da 1A.
 
 ## 8. Riscos
 
@@ -163,7 +190,11 @@ A redução é julgamento, não medição. As faixas assumem testes. O spike as 
 | VCE fechado/protegido | Formato principal pode ficar inviável | Spike; plano B via PDF exportado |
 | Usuário sem a edição Pro do app original | Plano B bloqueado | Confirmar antes |
 | PDFs irregulares sem IA | Muitas questões mal extraídas | Revisão manual forte; testes de regressão |
-| Tipos avançados dominando os simulados | MVP cobre pouco | Cartão de referência; subir tipos avançados |
+| Tipos interativos são cerca de metade das questões | Sem eles o exame fica pela metade | Importar com autoavaliação já no MVP (Entrega 1B) |
+| Imagens ausentes nas páginas salvas | Interativos e exhibits inutilizáveis | Aceitar ZIP/arquivo único; marcar "anexo ausente"; avisar no import |
+| Dependência das classes CSS do site no importador de HTML | Quebra se o site mudar | Detecção por estrutura; cada mudança vira caso de teste |
+| Texto convertido por IA fora do app pode ter erros | Questões ou gabaritos errados | Preferir a fonte original; aviso na revisão; comparar com o HTML quando houver |
+| Escopo do MVP maior | Atraso | Duas entregas; 1A já utilizável |
 | Engenharia reversa de formato fechado | Conflito com licença | Sem DRM; decisão do usuário (não é aconselhamento jurídico) |
 | Servidor local acessível por sites do navegador | Leitura/alteração dos dados | Só localhost, validação Host/Origin, token CSRF, testes |
 | Nota escalonada não linear | Estimativa enganosa | Percentual real + estimativa rotulada |
@@ -175,8 +206,8 @@ A redução é julgamento, não medição. As faixas assumem testes. O spike as 
 ## 9. Perguntas em aberto
 
 1. Os `.vce` têm senha ou foram comprados/licenciados? Há a edição Pro do app original?
-2. Quais outros formatos existem (ProfExam, Boson, Excel, Word, Moodle)?
-3. Que tipos de questão dominam os simulados?
+2. Há outros formatos além de HTML, TXT, PDF e VCE (ProfExam, Boson, Excel, Word, Moodle)?
+3. ~~Que tipos de questão dominam os simulados?~~ **Resolvido pelas amostras:** cerca de metade é de tipos interativos; todos devem ser importados.
 4. Aceitar "VCE → PDF no app original → GOTCHA" como caminho principal?
 5. Qual sistema operacional será usado (afeta o empacotamento da Fase 2)?
 6. Confirmação final: nenhuma IA em nenhuma etapa.

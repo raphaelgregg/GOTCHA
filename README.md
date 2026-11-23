@@ -1,6 +1,6 @@
 # GOTCHA
 
-Aplicativo **pessoal e local** para **importar exames (simulados) de certificação em vários formatos** (incluindo VCE, condicionado a validação), revisar as questões importadas e **treinar com testes cronometrados**.
+Aplicativo **pessoal e local** para **importar exames (simulados) de certificação em vários formatos** (HTML, TXT, PDF, JSON, CSV/XLSX e VCE, este condicionado a validação), revisar as questões importadas, **montar simulados** a partir delas e **treinar com testes cronometrados**.
 
 > **Status:** planejamento concluído, nenhuma funcionalidade implementada. Acompanhe em [`PLAN.md`](PLAN.md) e na seção [TODO](#todo).
 
@@ -16,16 +16,21 @@ Aplicativo **pessoal e local** para **importar exames (simulados) de certificaç
 
 ## Escopo do MVP
 
-Critério de sucesso: **arquivo de simulado → revisão → exame cronometrado.**
+Critério de sucesso: **arquivos de simulado → revisão → simulado montado → exame cronometrado.**
 
-| Item | MVP | Release 2 |
-| --- | --- | --- |
-| Formatos de importação | JSON do app, CSV/XLSX (com mapeamento de colunas), PDF com texto e imagens | HTML, OCR, DOCX, Aiken/GIFT, Moodle XML, QTI |
-| VCE | Plugin experimental, **somente se** o spike com arquivos reais der certo | — |
-| Tipos de questão pontuados | Múltipla escolha, múltipla resposta (inclui "Select THREE"), verdadeiro/falso | Arrastar-e-soltar, Sim/Não, hot area, estudo de caso |
-| Demais tipos | "Cartão de referência" (visível, não pontua, fora dos exames) ou ignorados | — |
-| Prova | Modos estudo e prova, marcar, revisar, lista, exhibit, salvar e retomar sessão | Estatísticas por tema, revisão espaçada |
-| Distribuição | `uv run` na máquina | Empacotamento desktop (Tauri ou similar) |
+"Entender e gerar simulados" significa: o app **entende** os arquivos por análise determinística (sem IA) e **monta** o simulado a partir do banco importado (exames e tópicos, quantidade, sorteio reproduzível, só erradas ou marcadas). Nenhuma questão é criada por modelo.
+
+| Item | Entrega 1A | Entrega 1B | Release 2 |
+| --- | --- | --- | --- |
+| Formatos | TXT simples, JSON, CSV/XLSX, HTML salvo (questões com alternativas) | ZIP com imagens, PDF com texto e imagens | DOCX, OCR, Aiken/GIFT, Moodle XML, QTI |
+| VCE | — | Plugin experimental, **somente se** o spike der certo (hoje: via PDF exportado) | VCE direto, se aprovado |
+| Questões corrigidas automaticamente | Múltipla escolha, múltipla resposta ("Select THREE"), verdadeiro/falso | — | — |
+| Tipos interativos (hot area, arrastar-e-soltar, simulação, Sim/Não) | — | Importados com imagens e pontuados por **autoavaliação** | Correção automática |
+| Estudo de caso | — | Contexto compartilhado entre as questões | — |
+| Exame multipágina | Várias páginas no mesmo exame, com deduplicação por (tópico, número) | — | — |
+| Gerador de simulado | Sim | — | Estatísticas por tema, revisão espaçada |
+| Prova | Modos estudo e prova, marcar, revisar, lista, salvar e retomar | Exhibit com zoom | — |
+| Distribuição | `uv run` na máquina | — | Empacotamento desktop |
 
 Os requisitos de tela, baseados no VCE Player, estão em [`docs/REQUISITOS-UI.md`](docs/REQUISITOS-UI.md). A interface será própria, sem a marca da Avanset.
 
@@ -86,72 +91,79 @@ Legenda: `[ ]` pendente · `[x]` concluído.
 - [ ] Confirmar o resultado do VCE exportando um dos `.vce` para PDF no app original
 - [x] Analisar uma página HTML salva (50 questões; metade com imagem): viável, mas faltou a pasta de imagens (`docs/SPIKE-HTML.md`)
 - [x] Analisar mais 2 páginas HTML e 1 TXT convertido por IA: exame multipágina, 53% das questões sem alternativas (`docs/SPIKE-HTML.md`)
-- [ ] Decidir se "HTML salvo" sobe do Release 2 para o MVP (proposta: sim) e se aceita ZIP com a pasta de recursos
-- [ ] Decidir se entra no MVP o modo "revelar e autoavaliar" para tipos interativos (proposta: sim)
-- [ ] Decidir se entra o plugin de TXT simples e o agrupamento de várias páginas em um exame
+- [x] Decisão do usuário: **todos os formatos e tipos de questão recebidos entram no escopo**, incluindo PDF, e o app deve montar simulados a partir deles
 - [ ] Testar extração de PDF com `pdfplumber` e `pypdfium2` nos exemplos
 - [ ] Medir a taxa de questões extraídas corretamente e fechar o gate de qualidade
 - [ ] Converter as descobertas em casos de teste com fixtures sintéticas
 
-### Fase 1 — MVP (cada item começa pelo teste)
+### Fase 1 — Entrega 1A: núcleo utilizável (cada item começa pelo teste)
 
 **Fundação e segurança local**
 
-- [ ] Modelo de dados SQLite: lotes, rascunhos, questões, exames, sessões, tentativas
+- [ ] Modelo de dados SQLite: lotes, rascunhos, exames, tópicos, questões, sessões, tentativas
 - [ ] Servidor só em `127.0.0.1`, validação de `Host`/`Origin` e token anti-CSRF
 - [ ] Sanitização de HTML dos enunciados importados
 
 **Núcleo de domínio**
 
+- [ ] Chave de questão (exame, tópico, número)
 - [ ] Tipos de questão como plugins: múltipla escolha, múltipla resposta (quantidade exata), verdadeiro/falso
 - [ ] Corretores e cálculo de nota
-- [ ] Cartão de referência para tipos não pontuados
 
 **Importação**
 
 - [ ] Interface do plugin de importação (detecção por conteúdo, vários arquivos, um lote por arquivo)
-- [ ] Importadores: JSON do app, CSV/XLSX com mapeamento de colunas, PDF com texto e imagens
+- [ ] Importador de TXT simples (linhas indentadas, sem presumir acentuação, marcadores de imagem e de configuração manual)
+- [ ] Importadores de JSON e CSV/XLSX com mapeamento de colunas
+- [ ] Importador de HTML salvo (questões com alternativas, resposta, votos, tabelas e código no enunciado)
 - [ ] Fila de jobs em SQLite e worker em subprocesso, sem rede e com limites
-- [ ] Suporte a exhibits (imagens anexas) e tabelas/código nos enunciados
 
-**Revisão**
+**Revisão e biblioteca**
 
 - [ ] Tela de revisão: dividir, mesclar, reatribuir alternativas e gabarito
+- [ ] Agrupar vários arquivos no mesmo exame, com deduplicação por (tópico, número)
 - [ ] Confirmação do lote com opção de desfazer
-
-**Biblioteca**
-
 - [ ] Lista de exames: adicionar, renomear, remover, propriedades, histórico
-- [ ] Vários exames dentro de um mesmo arquivo ("Exam A", "Exam B")
+
+**Gerador de simulado**
+
+- [ ] Escolher exames e tópicos, quantidade, ordem aleatória reproduzível por semente
+- [ ] Filtros: só erradas, só marcadas, só não respondidas
+- [ ] Salvar e reutilizar a definição do simulado
 
 **Prova**
 
 - [ ] Modos estudo e prova (gabarito ausente da interface em modo prova)
-- [ ] Marcar questão, revisar (marcadas/não respondidas), mostrar lista, anterior/próxima
-- [ ] Botão Exhibit
+- [ ] Marcar, revisar, mostrar lista, anterior/próxima
 - [ ] Cronômetro com o backend como fonte do tempo
 - [ ] Salvar sessão e retomar
 - [ ] Resultado com percentual real e estimativa escalonada rotulada como aproximação
 - [ ] Perfis de exame como dados, com fonte oficial conferida
 
-**Dados**
+### Fase 1 — Entrega 1B: imagens, interativos e PDF
 
+- [ ] Entrada em ZIP (página + pasta de recursos) e arquivo único; "anexo ausente" quando faltar imagem
+- [ ] Exhibit com zoom e imagens nos enunciados
+- [ ] Estudo de caso como entidade com contexto compartilhado
+- [ ] Tipos interativos importados com imagem da resposta, pontuados por autoavaliação ("revelar e marcar")
+- [ ] Resultado separando pontuação automática e autoavaliada
+- [ ] Importador de PDF com texto e imagens (`pdfplumber` e `pypdfium2`) e ferramentas de revisão para layouts irregulares
 - [ ] Exportar e importar o banco (JSON)
 - [ ] Aviso de direito de uso no primeiro uso
 
 ### Fase 2 — Release 2
 
 - [ ] Plugin VCE direto (se aprovado no spike)
-- [ ] HTML, OCR, DOCX, Aiken/GIFT, Moodle XML e QTI
-- [ ] Tipos avançados: arrastar-e-soltar, Sim/Não, hot area, estudo de caso
+- [ ] OCR, DOCX, Aiken/GIFT, Moodle XML e QTI
+- [ ] Correção automática de tipos interativos
 - [ ] Estatísticas por tema e revisão espaçada
 - [ ] Empacotamento como aplicativo desktop
 
 ### Perguntas em aberto
 
 - [ ] Os `.vce` têm senha ou foram comprados/licenciados? Há a edição Pro do app original?
-- [ ] Quais outros formatos existem (ProfExam, Boson, Excel, Word, Moodle)?
-- [ ] Os simulados têm muitas questões de arrastar-e-soltar, Sim/Não, hot area ou estudo de caso?
+- [ ] Há outros formatos além de HTML, TXT, PDF e VCE (ProfExam, Boson, Excel, Word, Moodle)?
+- [x] Tipos de questão: cerca de metade das amostras é interativa (hot area, arrastar-e-soltar, simulação); todos devem ser importados
 - [ ] Qual sistema operacional será usado?
 - [x] Uso pessoal ou multiusuário? **Pessoal, usuário único, local.**
 

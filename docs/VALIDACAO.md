@@ -75,12 +75,16 @@ Critérios: **Viabilidade** (técnica), **Valor** (para o objetivo), **Risco** (
 | Aviso de direito de uso no primeiro uso | A | Alta | Baixo | Baixo | Para uso pessoal basta um aviso |
 | Percentual real + estimativa de nota escalonada rotulada | A | Média | Médio | Médio | Nunca prometer a nota oficial |
 | Aiken, GIFT, Moodle XML | B | Alta | Médio | Baixo | Formatos abertos |
-| HTML, DOCX | B | Média | Médio | Médio | Parsing de estrutura |
+| DOCX | B | Média | Médio | Médio | Parsing de estrutura |
+| **HTML salvo (questões com alternativas), TXT simples** | A | Alta | Alto | Baixo | Amostras reais recebidas (`docs/SPIKE-HTML.md`); HTML é frágil a mudanças no site |
+| **Exame multipágina com deduplicação; estudo de caso compartilhado** | A | Alta | Alto | Baixo | Numeração reinicia por tópico |
+| **Gerador de simulado a partir do banco** | A | Alta | Alto | Baixo | Sorteio por semente; sem IA |
 | QTI | B | Média | Baixo | Médio | Poucos usuários prováveis |
 | OCR (PDF escaneado) | B | Média | Médio | Alto | Subprocesso com limites; qualidade variável |
 | Estatísticas por tema/ponto fraco | B | Alta | Alto | Baixo | Depende de tags nas questões |
 | Revisão espaçada de erradas (estilo Anki) | B | Alta | Médio | Baixo | Extra |
-| Arrastar-e-soltar, Sim/Não, hot area, estudo de caso | B | Média | Alto | Médio | Sobem ao MVP se os exemplos forem dominados por eles |
+| Arrastar-e-soltar, Sim/Não, hot area, simulação: **importar com autoavaliação** | A | Média | Alto | Médio | ~metade das amostras; exige as imagens junto |
+| Correção automática desses tipos | B | Baixa | Médio | Alto | Exige motor próprio por tipo |
 | **VCE via PDF exportado** | C | Média | Alto | Médio | Sem trabalho extra além do PDF; exige Pro no app original |
 | **VCE direto** | C | Baixa | Alto | **Alto** | Só se o spike achar variante legível e o aspecto legal permitir |
 | PWA offline | C | Média | Baixo | Baixo | Só se houver demanda |
