@@ -1,39 +1,57 @@
 import { describe, expect, it } from "vitest";
 import { toggleChoice } from "./choices";
 import { formatClock, formatPct, formatDuration, plural } from "./format";
-import { questionStatus, isComplete } from "./progress";
+import { hasAnswer, isComplete, questionStatus } from "./progress";
 import { parseHash, buildHash } from "./route";
 
 describe("toggleChoice", () => {
   it("single choice replaces the selection", () => {
-    expect(toggleChoice(["A"], "B", "single", 1)).toEqual(["B"]);
+    expect(toggleChoice(["A"], "B", false, 1)).toEqual(["B"]);
   });
-  it("true/false behaves like single choice", () => {
-    expect(toggleChoice([], "A", "true_false", 1)).toEqual(["A"]);
-  });
-  it("multiple adds and removes letters, keeping them sorted", () => {
-    expect(toggleChoice(["C"], "A", "multiple", 3)).toEqual(["A", "C"]);
-    expect(toggleChoice(["A", "C"], "A", "multiple", 3)).toEqual(["C"]);
+  it("multiple adds and removes ids, keeping them sorted", () => {
+    expect(toggleChoice(["C"], "A", true, 3)).toEqual(["A", "C"]);
+    expect(toggleChoice(["A", "C"], "A", true, 3)).toEqual(["C"]);
   });
   it("multiple ignores selections beyond the required count", () => {
-    expect(toggleChoice(["A", "B"], "C", "multiple", 2)).toEqual(["A", "B"]);
+    expect(toggleChoice(["A", "B"], "C", true, 2)).toEqual(["A", "B"]);
   });
 });
 
-describe("progress", () => {
-  const q = { id: "q", kind: "multiple", required_count: 2 } as const;
+describe("progress by question type", () => {
+  const q = (o: object) => o as never;
+  it("choice types need a selection; multiple select needs the exact count", () => {
+    const ms = q({ id: "m", type: "multiple_select", required_count: 2 });
+    expect(hasAnswer(ms, { selected: ["A"] })).toBe(true);
+    expect(isComplete(ms, { selected: ["A"] })).toBe(false);
+    expect(isComplete(ms, { selected: ["A", "B"] })).toBe(true);
+  });
+  it("build list is complete when the sequence has the expected length", () => {
+    const b = q({ id: "b", type: "build_list", answer_length: 3 });
+    expect(hasAnswer(b, { sequence: ["x"] })).toBe(true);
+    expect(isComplete(b, { sequence: ["x", "y"] })).toBe(false);
+    expect(isComplete(b, { sequence: ["x", "y", "z"] })).toBe(true);
+  });
+  it("drag and drop is answered when anything was placed", () => {
+    const d = q({ id: "d", type: "drag_drop" });
+    expect(hasAnswer(d, { placements: { t1: [] } })).toBe(false);
+    expect(hasAnswer(d, { placements: { t1: ["i1"] } })).toBe(true);
+  });
+  it("hot area, screens and labs", () => {
+    expect(hasAnswer(q({ id: "h", type: "hot_area" }), { selected: ["s1"] })).toBe(true);
+    expect(hasAnswer(q({ id: "a", type: "active_screen" }), { events: [] })).toBe(false);
+    expect(hasAnswer(q({ id: "a", type: "active_screen" }), { events: [{ component: "x", type: "click" }] })).toBe(true);
+    expect(hasAnswer(q({ id: "l", type: "lab" }), { attested: ["s1"] })).toBe(true);
+  });
+  it("self assessed is answered by the mark, including a negative one", () => {
+    const s = q({ id: "s", type: "self_assessed" });
+    expect(hasAnswer(s, { self_mark: false })).toBe(true);
+    expect(hasAnswer(s, {})).toBe(false);
+  });
   it("status is unanswered, answered or marked", () => {
-    expect(questionStatus(q, undefined, false)).toBe("unanswered");
-    expect(questionStatus(q, { selected: ["A"], self_mark: null }, false)).toBe("answered");
-    expect(questionStatus(q, undefined, true)).toBe("marked");
-  });
-  it("interactive questions are answered by the self mark", () => {
-    const i = { id: "i", kind: "interactive" } as const;
-    expect(questionStatus(i, { selected: [], self_mark: false }, false)).toBe("answered");
-  });
-  it("multiple is complete only with the exact count", () => {
-    expect(isComplete(q, { selected: ["A"], self_mark: null })).toBe(false);
-    expect(isComplete(q, { selected: ["A", "B"], self_mark: null })).toBe(true);
+    const mc = q({ id: "c", type: "multiple_choice" });
+    expect(questionStatus(mc, undefined, false)).toBe("unanswered");
+    expect(questionStatus(mc, { selected: ["A"] }, false)).toBe("answered");
+    expect(questionStatus(mc, undefined, true)).toBe("marked");
   });
 });
 
@@ -71,6 +89,11 @@ describe("route", () => {
     expect(parseHash("#/simulado/new?exam=e1")).toEqual({
       name: "simulado", id: "new", query: { exam: "e1" },
     });
+  });
+  it("knows the editor routes", () => {
+    expect(parseHash("#/questions/e1").name).toBe("questions");
+    expect(parseHash("#/question/q_abc")).toEqual({ name: "question", id: "q_abc", query: {} });
+    expect(parseHash("#/case/c1").name).toBe("case");
   });
   it("builds hashes", () => {
     expect(buildHash("batch", "z")).toBe("#/batch/z");

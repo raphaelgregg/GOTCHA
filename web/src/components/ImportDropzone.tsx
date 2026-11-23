@@ -5,7 +5,7 @@ import { messageOf } from "../hooks/useAsync";
 import { plural } from "../lib/format";
 import { Badge, Button, Notice } from "./ui";
 
-const ACCEPT = ".html,.htm,.txt,.pdf,.json,.csv,.xlsx,.zip,.vce";
+const ACCEPT = ".html,.htm,.txt,.pdf,.json,.csv,.xlsx,.zip,.gotcha,.vce";
 
 export function ImportDropzone({ onImported }: { onImported: () => void }) {
   const input = useRef<HTMLInputElement>(null);
@@ -39,7 +39,7 @@ export function ImportDropzone({ onImported }: { onImported: () => void }) {
         onDrop={(e) => { e.preventDefault(); setOver(false); void send(Array.from(e.dataTransfer.files)); }}
       >
         <p><strong>Arraste os arquivos aqui</strong> ou escolha no computador.</p>
-        <p className="muted">HTML salvo, TXT, PDF, CSV/XLSX, JSON do app e ZIP (página + pasta de imagens). Vários de uma vez.</p>
+        <p className="muted">HTML salvo, TXT, PDF, CSV/XLSX, JSON, pacote .gotcha e ZIP (página + pasta de imagens). Vários de uma vez.</p>
         <input ref={input} type="file" multiple accept={ACCEPT} hidden onChange={(e) => void send(Array.from(e.target.files ?? []))} />
         <Button variant="primary" busy={busy} onClick={() => input.current?.click()}>Escolher arquivos</Button>
       </div>

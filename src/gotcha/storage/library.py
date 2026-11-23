@@ -382,6 +382,9 @@ class Library:
             raise KeyError(exam_id)
         return exam_id
 
+    def next_number(self, exam_id: str, topic: int) -> int:
+        return self._free_number(exam_id, topic)
+
     def _free_number(self, exam_id: str, topic: int) -> int:
         row = self.db.one(
             "SELECT MAX(number) AS n FROM questions WHERE exam_id = ? AND topic = ?",

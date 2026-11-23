@@ -1,14 +1,7 @@
-import type { Kind } from "../api/types";
-
-/** Atualiza a seleção de alternativas conforme o tipo de questão. */
-export function toggleChoice(
-  selected: string[],
-  letter: string,
-  kind: Kind,
-  required: number,
-): string[] {
-  if (kind !== "multiple") return [letter];
-  if (selected.includes(letter)) return selected.filter((l) => l !== letter);
+/** Atualiza a seleção de alternativas: escolha única substitui; múltipla alterna até o limite exigido. */
+export function toggleChoice(selected: string[], id: string, multiple: boolean, required: number): string[] {
+  if (!multiple) return [id];
+  if (selected.includes(id)) return selected.filter((x) => x !== id);
   if (selected.length >= required) return selected;
-  return [...selected, letter].sort();
+  return [...selected, id].sort();
 }

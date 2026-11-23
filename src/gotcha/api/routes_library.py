@@ -7,15 +7,16 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, HTTPException, Request, UploadFile
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from gotcha.domain.models import Question as V1Question
 from gotcha.importers import UnsupportedFormat, detect
 from gotcha.importers.bundle import BundleError, load_source
-from gotcha.qtypes import parse_question, summarize_question
+from gotcha.qtypes import parse_question, public_view, summarize_question, validate_question
 from gotcha.qtypes.assets import AssetError
 from gotcha.qtypes.case import CaseStudyDoc
 from gotcha.qtypes.package import PackageError, export_package, looks_like_package
+from gotcha.qtypes.templates import convert, template
 from gotcha.sandbox import SandboxError
 from gotcha.storage.library import BatchView
 
@@ -195,6 +196,23 @@ def exam_questions(request: Request, exam_id: str) -> list[dict[str, Any]]:
     return [summarize_question(q) for q in services(request).library.questions([exam_id])]
 
 
+@router.post("/exams/{exam_id}/questions")
+def create_question(
+    request: Request, exam_id: str, body: Annotated[dict[str, Any], Body()]
+) -> dict[str, Any]:
+    """Cria uma questão no exame (editor). Sem número, entra no fim do tópico."""
+    lib = services(request).library
+    if not any(e.id == exam_id for e in lib.list_exams()):
+        raise HTTPException(404, "Exame não encontrado.")
+    topic = int(body.get("topic", 1))
+    data = {**body, "topic": topic, "exam_id": exam_id}
+    data.pop("uid", None)
+    data.setdefault("number", lib.next_number(exam_id, topic))
+    question = parse_question(data)
+    uid = lib.add_question(question)
+    return lib.get_question(uid).model_dump(mode="json", exclude={"batch_id"})
+
+
 @router.get("/questions/{uid}")
 def get_question(request: Request, uid: str) -> dict[str, Any]:
     """Questão completa, com gabarito, para o editor."""
@@ -209,6 +227,33 @@ def put_question(request: Request, uid: str, body: Annotated[dict[str, Any], Bod
         .library.replace_question(uid, question)
         .model_dump(mode="json", exclude={"batch_id"})
     )
+
+
+@router.post("/preview")
+def preview_question(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
+    """Valida uma questão em edição e devolve a visão de prova, sem salvar nada."""
+    try:
+        question = parse_question(body)
+    except ValidationError as exc:
+        errors = [f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors()[:12]]
+        return {"view": None, "errors": errors}
+    errors = validate_question(question)
+    if errors:
+        return {"view": None, "errors": errors}
+    return {"view": public_view(question, False, 1), "errors": []}
+
+
+@router.get("/templates/{type_}")
+def question_template(type_: str, mode: str = "simulated") -> dict[str, Any]:
+    return template(type_, mode)
+
+
+@router.post("/convert/{type_}")
+def convert_question(
+    type_: str, body: Annotated[dict[str, Any], Body()], mode: str = "simulated"
+) -> dict[str, Any]:
+    """Converte a questão para outro tipo, preservando enunciado e identidade (nada é salvo)."""
+    return convert(body, type_, mode)
 
 
 @router.delete("/questions/{uid}")

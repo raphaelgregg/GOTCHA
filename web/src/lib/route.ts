@@ -1,11 +1,11 @@
-export type RouteName = "library" | "batch" | "simulado" | "exam" | "result" | "history";
+export type RouteName = "library" | "batch" | "simulado" | "exam" | "result" | "history" | "questions" | "question" | "case";
 export interface Route {
   name: RouteName;
   id: string | null;
   query: Record<string, string>;
 }
 
-const NAMES = new Set<string>(["batch", "simulado", "exam", "result", "history"]);
+const NAMES = new Set<string>(["batch", "simulado", "exam", "result", "history", "questions", "question", "case"]);
 
 export function parseHash(hash: string): Route {
   const [path = "", search = ""] = hash.replace(/^#\/?/, "").split("?");

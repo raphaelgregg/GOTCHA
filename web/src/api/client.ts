@@ -1,16 +1,23 @@
+import type { PublicQuestion, ResponseValue } from "./question";
 import type {
   BatchDetail,
+  CaseDoc,
+  QuestionSummary,
   BatchSummary,
   ConfirmResult,
   DraftQuestion,
   ExamInfo,
   ExamResult,
   ImportResult,
-  PublicQuestion,
   SessionState,
   SessionSummary,
   Spec,
 } from "./types";
+
+export interface AssetInfo {
+  id: string; mime: string; width: number | null; height: number | null; pages: number | null;
+  size: number; names: string[]; default_alt: string;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -69,12 +76,29 @@ export const api = {
   undo: (id: string) => request(`/batches/${id}/undo`, json("POST")),
   discard: (id: string) => request(`/batches/${id}`, json("DELETE")),
   assetUrl: (sha: string) => `/api/assets/${sha}`,
+  examQuestions: (examId: string) => request<QuestionSummary[]>(`/exams/${examId}/questions`),
+  getQuestion: (uid: string) => request<Record<string, unknown>>(`/questions/${uid}`),
+  putQuestion: (uid: string, body: Record<string, unknown>) => request<Record<string, unknown>>(`/questions/${uid}`, json("PUT", body)),
+  deleteQuestionById: (uid: string) => request(`/questions/${uid}`, json("DELETE")),
+  getCase: (id: string) => request<CaseDoc>(`/cases/${id}`),
+  putCase: (id: string, body: CaseDoc) => request<CaseDoc>(`/cases/${id}`, json("PUT", body)),
+  uploadAsset: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return request<AssetInfo>("/assets", { method: "POST", body: form });
+  },
+  orphanAssets: () => request<string[]>("/assets/orphans"),
+  assetInfo: (sha: string) => request<AssetInfo>(`/assets/${sha}/info`),
+  preview: (body: Record<string, unknown>) => request<{ view: PublicQuestion | null; errors: string[] }>("/preview", json("POST", body)),
+  template: (type: string, mode = "simulated") => request<Record<string, unknown>>(`/templates/${type}?mode=${mode}`),
+  convert: (type: string, body: Record<string, unknown>, mode = "simulated") => request<Record<string, unknown>>(`/convert/${type}?mode=${mode}`, json("POST", body)),
+  createQuestion: (examId: string, body: Record<string, unknown>) => request<Record<string, unknown>>(`/exams/${examId}/questions`, json("POST", body)),
 
   createSimulado: (spec: Partial<Spec> & { exam_ids: string[] }) =>
     request<{ session_id: string }>("/simulados", json("POST", spec)),
   sessions: () => request<SessionSummary[]>("/sessions"),
   session: (id: string) => request<SessionState>(`/sessions/${id}`),
-  answer: (sid: string, qid: string, body: { selected?: string[]; self_mark?: boolean | null }) =>
+  answer: (sid: string, qid: string, body: ResponseValue) =>
     request(`/sessions/${sid}/responses/${qid}`, json("PUT", body)),
   mark: (sid: string, qid: string, marked: boolean) =>
     request(`/sessions/${sid}/marks/${qid}`, json("PUT", { marked })),

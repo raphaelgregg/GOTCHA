@@ -352,3 +352,56 @@ def test_case_study_can_be_read_and_edited(client: TestClient) -> None:
     case["sections"][0]["title"] = "Resumo"
     assert client.put(f"/api/cases/{case_id}", json=case).status_code == 200
     assert client.get(f"/api/cases/{case_id}").json()["sections"][0]["title"] == "Resumo"
+
+
+def test_preview_returns_the_exam_view_and_reports_problems_without_saving(client: TestClient) -> None:
+    from tests import qfactory as f
+
+    for name in f.ALL:
+        raw = {**f.RAW[name], "uid": "q_preview"}
+        r = client.post("/api/preview", json=raw)
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["errors"] == [] and body["view"]["type"] == f.RAW[name]["type"]
+        assert not ({"correct", "answer_sequence", "completion", "checks"} & set(body["view"]))
+
+    broken = {**f.RAW["multiple_choice"], "correct": "zzz"}
+    body = client.post("/api/preview", json=broken).json()
+    assert body["view"] is None and any("gabarito" in e for e in body["errors"])
+    invalid_shape = {
+        **f.RAW["hot_area"],
+        "shapes": [{"id": "s", "geometry": {"kind": "circle", "cx": 2, "cy": 0, "r": 0}}],
+    }
+    assert client.post("/api/preview", json=invalid_shape).json()["errors"]
+    assert client.get("/api/exams").json() == []  # nada foi salvo
+
+
+def test_a_new_question_can_be_created_from_a_template(client: TestClient) -> None:
+    _, exam_id = make_exam(client)
+    template = client.get("/api/templates/hot_area").json()
+    r = client.post(f"/api/exams/{exam_id}/questions", json={**template, "number": 50})
+    assert r.status_code == 200, r.text
+    created = r.json()
+    assert created["type"] == "hot_area" and created["uid"] and created["exam_id"] == exam_id
+    listed = client.get(f"/api/exams/{exam_id}/questions").json()
+    assert listed[-1]["type"] == "hot_area" and len(listed) == 4
+    bad = client.post(f"/api/exams/{exam_id}/questions", json={**template, "number": 51, "correct": ["nada"]})
+    assert bad.status_code == 400
+    # sem número informado, entra no fim do tópico
+    auto = client.post(
+        f"/api/exams/{exam_id}/questions", json=client.get("/api/templates/build_list").json()
+    ).json()
+    assert auto["number"] == 51
+
+
+def test_convert_endpoint_keeps_the_identity(client: TestClient) -> None:
+    _, exam_id = make_exam(client)
+    uid = client.get(f"/api/exams/{exam_id}/questions").json()[0]["id"]
+    full = client.get(f"/api/questions/{uid}").json()
+    converted = client.post("/api/convert/build_list", json=full).json()
+    assert (
+        converted["type"] == "build_list"
+        and converted["uid"] == uid
+        and converted["prompt"] == full["prompt"]
+    )
+    assert client.post("/api/preview", json=converted).json()["errors"] == []

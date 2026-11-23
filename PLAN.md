@@ -91,7 +91,7 @@ O maior risco é a premissa de partida (VCE). O spike da Fase 0 substitui estima
 | 26 | **Hot Area com coordenadas normalizadas** (retângulo, círculo, polígono) sobre SVG com `viewBox` proporcional | Independe da resolução |
 | 27 | **Active Screen declarativo**: componentes de lista fechada, estado, ações e condições em JSON, sem executar código importado; correção no servidor reexecutando o registro de ações | Segurança e gabarito oculto |
 | 28 | **Lab** com modo obrigatório (`simulated`, `external_instructions`, `real`) e aviso fixo de que simulação não é execução real | Honestidade com o usuário |
-| 29 | **Tipo de transição `self_assessed`** para o que a importação não consegue reconstruir; conversível no editor | As amostras só trazem imagens, sem regiões nem itens (a aprovar) |
+| 29 | **Tipo de transição `self_assessed`** para o que a importação não consegue reconstruir; conversível no editor | As amostras só trazem imagens, sem regiões nem itens (aprovado) |
 | 30 | **Editor universal** único para importados e salvos, com gestão de mídia e prévia | Requisito adicional |
 
 Todas ficam como **Proposta** até aprovação do usuário.
@@ -174,9 +174,9 @@ Cada bloco começa pelos testes.
 11. **PDF:** extração de texto e imagens com `pdfplumber` e `pypdfium2`, ferramentas de revisão para layouts irregulares.
 12. **Dados:** exportar e importar o banco (JSON), aviso de direito de uso no primeiro uso.
 
-### Fase 1C — Multimídia e tipos interativos (requisito adicional, a aprovar)
+### Fase 1C — Multimídia e tipos interativos (requisito adicional, aprovada e implementada)
 
-Desenho completo, testes e estimativas em [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md). Ordem proposta, cada etapa utilizável por si:
+Desenho, testes e **estado da implementação** em [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md) (seção 18). Itens pendentes: extração de imagens do PDF (E), galeria de mídia, alvos do Drag and Drop sobre imagem e adaptador QTI. Ordem seguida:
 
 1. **A**: modelo canônico v2, registro de tipos, loja de recursos com hash, pacote `.gotcha` e migração.
 2. **B**: portar múltipla escolha e seleção; Build List; Drag and Drop; Hot Area com editor de regiões.

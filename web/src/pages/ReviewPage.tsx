@@ -26,25 +26,67 @@ export function ReviewPage({ id }: { id: string }) {
 }
 
 function Review({ batch, reload }: { batch: BatchDetail; reload: () => void }) {
-  const toast = useToast();
-  const exams = useAsync(() => api.exams());
   const [onlyWarnings, setOnlyWarnings] = useState(false);
-  const [target, setTarget] = useState("new");
-  const [name, setName] = useState(batch.filename.replace(/\.[^.]+$/, ""));
-  const [busy, setBusy] = useState(false);
-
+  const v2 = batch.schema === 2;
+  const total = v2 ? batch.questions_v2.length : batch.questions.length;
   const visible = useMemo(
     () => batch.questions.map((q, index) => ({ q, index })).filter(({ q }) => !onlyWarnings || q.warnings.length > 0),
     [batch.questions, onlyWarnings],
   );
-  const withWarnings = batch.questions.filter((q) => q.warnings.length > 0).length;
+  const withWarnings = v2 ? batch.questions_v2.filter((q) => q.warnings.length > 0 || q.status !== "ok").length : batch.questions.filter((q) => q.warnings.length > 0).length;
+
+  return (
+    <div className="stack">
+      <Card>
+        <div className="row-between">
+          <div>
+            <h2>Revisar: {batch.filename}</h2>
+            <p className="muted">{plural(total, "questão", "questões")} · formato {batch.format.toUpperCase()} · {withWarnings} com avisos</p>
+          </div>
+          <Button variant="ghost" onClick={() => navigate("library")}>← Voltar</Button>
+        </div>
+        {batch.warnings.map((w) => <Notice key={w} tone="warn">{w}</Notice>)}
+        {(batch.cases.length > 0 || batch.cases_v2.length > 0) && <Notice>{plural(batch.cases.length + batch.cases_v2.length, "estudo de caso", "estudos de caso")} com contexto compartilhado {batch.cases.length + batch.cases_v2.length === 1 ? "foi detectado" : "foram detectados"}.</Notice>}
+        {v2 && <Notice>Pacote .gotcha: as questões já estão no modelo completo. Confirme para adicioná-las; edite depois em <strong>Questões</strong> do exame.</Notice>}
+        {!v2 && <label className="check"><input type="checkbox" checked={onlyWarnings} onChange={(e) => setOnlyWarnings(e.target.checked)} /> Mostrar só questões com avisos</label>}
+      </Card>
+
+      {v2 && (
+        <Card>
+          <ul className="rows">
+            {batch.questions_v2.map((q) => (
+              <li key={q.id}>
+                <div><strong>T{q.topic} · Q{q.number}</strong> <Badge>{q.type}</Badge>
+                  {q.missing_images > 0 && <Badge tone="warn">{plural(q.missing_images, "anexo ausente", "anexos ausentes")}</Badge>}
+                  <div className="muted clamp">{q.text}</div></div>
+                {q.warnings.length > 0 && <Badge tone="warn">{plural(q.warnings.length, "aviso", "avisos")}</Badge>}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+      {!v2 && visible.length === 0 && <Notice tone="good">Nenhuma questão com avisos.</Notice>}
+      {!v2 && visible.map(({ q, index }) => (
+        <QuestionEditor key={`${index}-${q.number}-${q.stem.length}`} batchId={batch.id} index={index} q={q} last={index === batch.questions.length - 1} reload={reload} />
+      ))}
+      <ConfirmBar batch={batch} count={total} />
+    </div>
+  );
+}
+
+function ConfirmBar({ batch, count }: { batch: BatchDetail; count: number }) {
+  const toast = useToast();
+  const exams = useAsync(() => api.exams());
+  const [target, setTarget] = useState("new");
+  const [name, setName] = useState(batch.filename.replace(/\.[^.]+$/, ""));
+  const [busy, setBusy] = useState(false);
 
   async function confirm() {
     setBusy(true);
     try {
       const result = await api.confirm(batch.id, target === "new" ? { exam_name: name } : { exam_id: target });
       toast.show(
-        `${result.added} questões adicionadas${result.skipped ? `, ${result.skipped} ignoradas por já existirem` : ""}.`,
+        `${result.added} questões adicionadas${result.skipped ? `, ${result.skipped} ignoradas por já existirem` : ""}${result.renumbered ? `, ${result.renumbered} renumeradas` : ""}.`,
         { tone: "good", ms: 20000, action: { label: "Desfazer", run: () => void api.undo(batch.id).then(() => toast.show("Importação desfeita.")).catch((e) => toast.show(messageOf(e), { tone: "bad" })) } },
       );
       navigate("library");
@@ -53,39 +95,16 @@ function Review({ batch, reload }: { batch: BatchDetail; reload: () => void }) {
       setBusy(false);
     }
   }
-
   return (
-    <div className="stack">
-      <Card>
-        <div className="row-between">
-          <div>
-            <h2>Revisar: {batch.filename}</h2>
-            <p className="muted">{plural(batch.questions.length, "questão", "questões")} · formato {batch.format.toUpperCase()} · {withWarnings} com avisos</p>
-          </div>
-          <Button variant="ghost" onClick={() => navigate("library")}>← Voltar</Button>
-        </div>
-        {batch.warnings.map((w) => <Notice key={w} tone="warn">{w}</Notice>)}
-        {batch.cases.length > 0 && <Notice>{plural(batch.cases.length, "estudo de caso", "estudos de caso")} com contexto compartilhado {batch.cases.length === 1 ? "foi detectado" : "foram detectados"}.</Notice>}
-        <label className="check"><input type="checkbox" checked={onlyWarnings} onChange={(e) => setOnlyWarnings(e.target.checked)} /> Mostrar só questões com avisos</label>
-      </Card>
-
-      {visible.length === 0 && <Notice tone="good">Nenhuma questão com avisos.</Notice>}
-      {visible.map(({ q, index }) => (
-        <QuestionEditor key={`${index}-${q.number}-${q.stem.length}`} batchId={batch.id} index={index} q={q} last={index === batch.questions.length - 1} reload={reload} />
-      ))}
-
-      <div className="sticky-bar">
-        <label className="field inline">Destino
-          <select value={target} onChange={(e) => setTarget(e.target.value)}>
-            <option value="new">Novo exame</option>
-            {exams.data?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-          </select>
-        </label>
-        {target === "new" && <label className="field inline">Nome<input value={name} onChange={(e) => setName(e.target.value)} /></label>}
-        <Button variant="primary" busy={busy} disabled={batch.questions.length === 0 || (target === "new" && !name.trim())} onClick={confirm}>
-          Confirmar {batch.questions.length} questões
-        </Button>
-      </div>
+    <div className="sticky-bar">
+      <label className="field inline">Destino
+        <select value={target} onChange={(e) => setTarget(e.target.value)}>
+          <option value="new">Novo exame</option>
+          {exams.data?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+        </select>
+      </label>
+      {target === "new" && <label className="field inline">Nome<input value={name} onChange={(e) => setName(e.target.value)} /></label>}
+      <Button variant="primary" busy={busy} disabled={count === 0 || (target === "new" && !name.trim())} onClick={confirm}>Confirmar {count} questões</Button>
     </div>
   );
 }

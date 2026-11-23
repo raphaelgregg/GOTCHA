@@ -1,3 +1,5 @@
+import type { Block, PublicQuestion, ResponseValue } from "./question";
+export type { PublicQuestion, ResponseValue };
 export type Kind = "single" | "multiple" | "true_false" | "interactive";
 export type Mode = "study" | "exam";
 export type OnlyFilter = "all" | "wrong" | "marked" | "unanswered";
@@ -12,6 +14,8 @@ export interface ImageRef {
   role: "stem" | "answer";
   missing: boolean;
 }
+export interface CaseSection { id: string; title: string; blocks: Block[] }
+export interface CaseDoc { id: string; title: string; sections: CaseSection[]; question_ids?: string[] }
 export interface CaseStudy {
   id: string;
   title: string;
@@ -29,8 +33,13 @@ export interface DraftQuestion {
   case_id: string | null;
   warnings: string[];
 }
+export interface QuestionSummary {
+  id: string; type: string; topic: number; number: number; text: string; status: string;
+  warnings: string[]; images: number; missing_images: number; case_id: string | null;
+}
 export interface BatchSummary {
   id: string;
+  schema: number;
   filename: string;
   format: string;
   title: string;
@@ -43,6 +52,8 @@ export interface BatchDetail extends BatchSummary {
   questions: DraftQuestion[];
   cases: CaseStudy[];
   warnings: string[];
+  questions_v2: QuestionSummary[];
+  cases_v2: Array<{ id: string; title: string; sections: number }>;
 }
 export interface ImportResult {
   filename: string;
@@ -60,28 +71,12 @@ export interface ExamInfo {
   topics: number[];
 }
 export interface ConfirmResult {
+  renumbered?: number;
   exam_id: string;
   added: number;
   skipped: number;
 }
 
-export interface PublicQuestion {
-  id: string;
-  topic: number;
-  number: number;
-  kind: Kind;
-  stem: string;
-  choices: Choice[];
-  images: ImageRef[];
-  case_id: string | null;
-  required_count?: number;
-  answer?: string[];
-  explanation?: string;
-}
-export interface ResponseState {
-  selected: string[];
-  self_mark: boolean | null;
-}
 export interface Spec {
   exam_ids: string[];
   topics: number[] | null;
@@ -102,25 +97,29 @@ export interface SessionState {
   time_limit_seconds: number | null;
   elapsed_seconds: number;
   questions: PublicQuestion[];
-  responses: Record<string, ResponseState>;
+  responses: Record<string, ResponseValue>;
   marks: string[];
-  cases: Record<string, CaseStudy>;
+  cases: Record<string, CaseDoc>;
 }
-export type Outcome = "correct" | "incorrect" | "unanswered" | "self_correct" | "self_incorrect";
-export interface ResultDetail extends PublicQuestion {
+export type Outcome = "correct" | "incorrect" | "partial" | "unanswered" | "self_correct" | "self_incorrect";
+export type ResultDetail = PublicQuestion & {
   question_id: string;
   outcome: Outcome;
-  selected: string[];
-  self_mark: boolean | null;
-}
+  score: number;
+  group: "auto" | "self" | "lab";
+  response: ResponseValue;
+};
 export interface Summary {
   auto_total: number;
   auto_correct: number;
   self_total: number;
   self_correct: number;
+  lab_total: number;
+  lab_correct: number;
   unanswered: number;
   auto_pct: number | null;
   self_pct: number | null;
+  lab_pct: number | null;
 }
 export interface ExamResult {
   session_id: string;
@@ -128,7 +127,7 @@ export interface ExamResult {
   summary: Summary;
   duration_seconds: number;
   details: ResultDetail[];
-  cases: Record<string, CaseStudy>;
+  cases: Record<string, CaseDoc>;
 }
 export interface SessionSummary {
   id: string;
@@ -138,4 +137,5 @@ export interface SessionSummary {
   question_count: number;
   auto_pct: number | null;
   self_pct: number | null;
+  lab_pct: number | null;
 }

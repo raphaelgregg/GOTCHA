@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { PublicQuestion, ResponseState } from "../api/types";
+import type { PublicQuestion, ResponseValue } from "../api/types";
 import { questionStatus } from "../lib/progress";
 
 type Filter = "all" | "marked" | "blank";
@@ -12,7 +12,7 @@ export function QuestionList({
   onPick,
 }: {
   questions: PublicQuestion[];
-  responses: Record<string, ResponseState>;
+  responses: Record<string, ResponseValue>;
   marks: Set<string>;
   current: number;
   onPick: (index: number) => void;

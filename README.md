@@ -2,7 +2,7 @@
 
 Aplicativo **pessoal e local** para **importar exames (simulados) de certificação em vários formatos** (HTML, TXT, PDF, JSON, CSV/XLSX e VCE, este condicionado a validação), revisar as questões importadas, **montar simulados** a partir delas e **treinar com testes cronometrados**.
 
-> **Status:** Entrega 1A implementada e grande parte da 1B (backend, importadores, interface web e testes). O PDF ainda não extrai imagens, e faltam a fila persistente de jobs e os perfis de exame. Veja o [TODO](#todo) e o [`PLAN.md`](PLAN.md).
+> **Status:** Entregas 1A e 1B quase completas e a Fase 1C (multimídia e tipos interativos) implementada, exceto a extração de imagens do PDF e alguns itens listados no [TODO](#todo). Faltam também a fila persistente de jobs e os perfis de exame. Detalhes em [`PLAN.md`](PLAN.md) e [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md).
 
 ## Princípios
 
@@ -71,7 +71,9 @@ uv run gotcha
 
 O app abre em `http://127.0.0.1:8765` e guarda os dados em `~/.gotcha` (mude com `--data-dir` ou `GOTCHA_DATA_DIR`).
 
-Fluxo: **importar** arquivos (vários de uma vez) → **revisar** e confirmar → **Novo simulado** → fazer a prova → ver o resultado.
+Fluxo: **importar** arquivos (vários de uma vez, inclusive pacotes `.gotcha`) → **revisar** e confirmar → **Questões** do exame para editar qualquer tipo → **Novo simulado** → fazer a prova → ver o resultado.
+
+Tipos de questão: múltipla escolha, múltipla seleção, Build List, Drag and Drop, Hot Area, Active Screen, Lab (simulado, instruções externas ou real) e autoavaliada. Cada exame pode ser exportado como pacote `.gotcha` autossuficiente (questões, estudos de caso e imagens).
 
 Desenvolvimento:
 
@@ -87,7 +89,8 @@ Arquivos reais para testar os importadores ficam em `samples/` (ignorada pelo gi
 
 ```text
 src/gotcha/
-  domain/      modelos, correção por tipo, gerador de simulado, sanitização, exposição
+  qtypes/      modelo canônico v2: um módulo por tipo, geometria, lógica declarativa, telas, recursos, pacote .gotcha
+  domain/      importação (modelo v1), gerador de simulado, resumo de notas, sanitização
   importers/   um plugin por formato (txt, html, pdf, csv, xlsx, json) + ZIP e detecção
   storage/     SQLite: biblioteca (rascunhos, exames, imagens) e sessões de prova
   api/         FastAPI, segurança local (Host/Origin/cabeçalho) e rotas
@@ -192,16 +195,19 @@ Legenda: `[ ]` pendente · `[x]` concluído.
 
 ### Fase 1C — Multimídia e tipos interativos (requisito adicional)
 
-Desenho entregue em `docs/ARQUITETURA-MULTIMIDIA.md`; implementação aguarda as decisões da seção 16.
+Desenho e estado em [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md) (seção 18).
 
-- [x] Apresentar o desenho: modelos, recursos, hash, coordenadas, Active Screen, Case Study, Lab, preservação e testes
-- [ ] A: modelo canônico v2, registro de tipos, loja de recursos por hash, pacote `.gotcha` e migração
-- [ ] B: múltipla escolha e seleção portadas; Build List; Drag and Drop; Hot Area com editor de regiões
-- [ ] C: Case Study como entidade com editor de contexto
-- [ ] D: editor universal com gestão de mídia, prévia e conversão de tipo
-- [ ] E: imagens do PDF com posição, órfãos e relatório de conversão
-- [ ] F: Active Screen (motor declarativo e construtor)
-- [ ] G: Lab (simulado, instruções externas e real, sempre rotulados)
+- [x] Apresentar o desenho e validar alternativas (decisões aprovadas)
+- [x] A: modelo canônico v2, registro de tipos, recursos por hash (SVG sanitizado), pacote `.gotcha` e migração
+- [x] B: múltipla escolha e seleção; Build List; Drag and Drop; Hot Area com editor de regiões
+- [x] C: Case Study como entidade com editor de contexto
+- [x] D: editor universal (blocos, imagens, prévia pelo servidor, conversão de tipo, criação de questão)
+- [ ] D: galeria de mídia no editor (recursos usados, ausentes e órfãos)
+- [ ] E: imagens do PDF com posição, órfãos e relatório de conversão na tela
+- [x] F: Active Screen (motor declarativo, correção por reexecução, construtor por formulários)
+- [x] G: Lab simulado, instruções externas e real, sempre rotulados
+- [ ] Alvos do Drag and Drop posicionados sobre uma imagem (interface e editor)
+- [ ] Adaptador QTI 3.0 (Release 2)
 
 ### Fase 2 — Release 2
 

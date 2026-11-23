@@ -76,7 +76,8 @@ export function LibraryPage() {
                       </div>
                     </div>
                     <Button variant="primary" disabled={e.question_count === 0} onClick={() => navigate("simulado", "new", { exam: e.id })}>Treinar</Button>
-                    <a className="btn btn-ghost" href={api.exportUrl(e.id)} download>Exportar</a>
+                    <Button variant="ghost" onClick={() => navigate("questions", e.id)}>Questões</Button>
+                    <a className="btn btn-ghost" href={api.exportUrl(e.id)} download title="Pacote .gotcha com questões, estudos de caso e imagens">Exportar .gotcha</a>
                     <Button variant="ghost" onClick={() => { setName(e.name); setRenaming(e); }}>Renomear</Button>
                     <Button variant="ghost" onClick={() => setRemoving(e)}>Remover</Button>
                   </li>
