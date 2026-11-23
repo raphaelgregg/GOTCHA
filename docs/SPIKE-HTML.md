@@ -54,3 +54,50 @@ As fixtures serão escritas à mão, imitando só a **forma** da estrutura, sem 
 ## Observação sobre origem e direitos
 
 O conteúdo vem de um site de terceiros que publica perguntas de exames reais. Não sei sob que licença ou autorização elas são publicadas. As regras do produto continuam: nada embutido no repositório, nada compartilhado, aviso de direito de uso no primeiro uso. A decisão sobre o que importar é do usuário.
+
+## Segunda rodada: páginas 2 e 3 e um TXT convertido por IA
+
+Foram recebidas as páginas 2 e 3 do mesmo site e um `.txt` que parece ser a página 2 (tópico 2, questões 1 a 24) convertida e traduzida para português por uma ferramenta de IA externa. A análise comparou estrutura, contagens e letras de resposta. **Não** comparou a fidelidade da tradução do texto.
+
+### As três páginas HTML
+
+| Página | Cartões | Tópicos presentes | Com alternativas | Resposta em imagem |
+| --- | --- | --- | --- | --- |
+| 1 | 50 | 1 | 25 | 25 |
+| 2 | 50 | 1 (26) e 2 (24) | 23 | 27 |
+| 3 | 50 | 2 (11) e 3 (39) | 23 | 27 |
+| **Total** | **150** | | **71 (47%)** | **79 (53%)** |
+
+- **A numeração reinicia por tópico.** A página 2 vai da questão 51 a 76 do tópico 1 e da 1 a 24 do tópico 2; a página 3 mistura os tópicos 2 e 3. Um exame se espalha por várias páginas, e a chave de uma questão é **(tópico, número)**.
+- **Só 47% das questões têm alternativas.** As demais dependem de imagem (arrastar-e-soltar, hot area, simulação) e, no MVP planejado, viram cartão de referência. Para este tipo de fonte, isso deixa **mais da metade do exame fora da pontuação**.
+
+### O TXT convertido (24 questões)
+
+| Item | Resultado |
+| --- | --- |
+| Tipos | 10 múltipla escolha, 7 hot area, 1 arrastar-e-soltar, 3 simulações, 3 estudos de caso |
+| Questões com resposta em letras | 13 (as 10 de múltipla escolha e as 3 de estudo de caso) |
+| Marcadas como "configuração manual" | 11 de 24 (46%) |
+| Marcadores de imagem ausente | 23, em 5 questões |
+| Comparação com o HTML original | **13 de 13** respostas em letras iguais; mesmo número de alternativas em todas; tipo (alternativas ou imagem) coincide nas 24 |
+| Estudo de caso | O texto do caso é **repetido por inteiro** em cada uma das 3 questões |
+| Acentos | Ausentes (texto sem acentuação), o que indica perda de codificação |
+
+Limites: a checagem cobre letras de resposta, contagem de alternativas e tipo. Erros de tradução no enunciado ou nas alternativas **não foram verificados**.
+
+### Impacto no plano (propostas, dependem da sua decisão)
+
+1. **Chave de questão e exame multipágina:** importar várias páginas e juntá-las em um mesmo exame na confirmação do lote, com deduplicação por (tópico, número).
+2. **Estudo de caso como entidade própria:** guardar o contexto uma vez e referenciá-lo nas questões, em vez de repetir o texto.
+3. **Plugin de TXT simples** (`Q<n>`, alternativas `A.`, `Answer:`): formato determinístico e fácil de testar. Deve aceitar linhas indentadas, mapear `[INSERIR IMAGEM...]` para "anexo ausente" e `[CONFIGURAÇÃO MANUAL...]` para cartão de referência. Não pode presumir acentuação.
+4. **Modo "revelar e autoavaliar" para tipos interativos:** mostra o enunciado e o exhibit; o usuário revela a imagem da resposta e marca se acertou. Não exige motor de correção e torna utilizável a metade do exame que hoje ficaria de fora, **desde que as imagens estejam presentes**.
+5. **Entrada com imagens:** reforça a necessidade de aceitar ZIP (página + pasta de recursos) ou página de arquivo único.
+6. **Texto convertido por IA:** o produto continua sem IA, mas o usuário pode alimentá-lo com texto convertido fora dele. Recomendação: preferir o HTML original e tratar o TXT como alternativa, avisando na revisão que a origem pode conter erros de conversão.
+
+### Testes a acrescentar (fixtures sintéticas)
+
+- Duas páginas que se sobrepõem em (tópico, número) → deduplicadas ao agrupar no mesmo exame.
+- Numeração reiniciada em novo tópico → questões distintas, sem colisão.
+- Estudo de caso com contexto repetido em três questões → um único contexto compartilhado.
+- TXT com respostas indentadas → lidas corretamente.
+- TXT com marcador de configuração manual → cartão de referência, não pontuado.

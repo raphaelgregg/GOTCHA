@@ -85,7 +85,10 @@ Legenda: `[ ]` pendente · `[x]` concluído.
 - [x] Classificar os `.vce` recebidos: resultado provisório **(b) somente via PDF exportado** (`docs/SPIKE-VCE.md`)
 - [ ] Confirmar o resultado do VCE exportando um dos `.vce` para PDF no app original
 - [x] Analisar uma página HTML salva (50 questões; metade com imagem): viável, mas faltou a pasta de imagens (`docs/SPIKE-HTML.md`)
+- [x] Analisar mais 2 páginas HTML e 1 TXT convertido por IA: exame multipágina, 53% das questões sem alternativas (`docs/SPIKE-HTML.md`)
 - [ ] Decidir se "HTML salvo" sobe do Release 2 para o MVP (proposta: sim) e se aceita ZIP com a pasta de recursos
+- [ ] Decidir se entra no MVP o modo "revelar e autoavaliar" para tipos interativos (proposta: sim)
+- [ ] Decidir se entra o plugin de TXT simples e o agrupamento de várias páginas em um exame
 - [ ] Testar extração de PDF com `pdfplumber` e `pypdfium2` nos exemplos
 - [ ] Medir a taxa de questões extraídas corretamente e fechar o gate de qualidade
 - [ ] Converter as descobertas em casos de teste com fixtures sintéticas
