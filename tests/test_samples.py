@@ -58,3 +58,34 @@ def test_txt_conversion_has_24_questions_and_one_shared_case() -> None:
     assert len(batch.questions) == 24
     assert len(batch.cases) == 1
     assert sum(q.case_id is not None for q in batch.questions) == 3
+
+
+def test_pdf_az140_every_interactive_question_gets_its_answer_image() -> None:
+    batch = load(sample("*az-140.pdf"))
+    interactive = [q for q in batch.questions if q.kind is QuestionKind.INTERACTIVE]
+    assert len(interactive) == 125
+    assert all(any(i.role == "answer" and i.sha in batch.assets for i in q.images) for q in interactive)
+    assert not any("sem questão" in w for w in batch.warnings)  # nenhuma imagem de conteúdo ficou sem dono
+    assert any("decorativ" in w for w in batch.warnings)  # o que foi ignorado é informado
+
+
+def test_pdf_az140_through_the_api_the_answer_image_is_served(tmp_path: Path) -> None:
+    from fastapi.testclient import TestClient
+
+    from gotcha.api.app import create_app
+
+    path = sample("*az-140.pdf")
+    client = TestClient(
+        create_app(tmp_path, sandbox=False), base_url="http://127.0.0.1:8765", headers={"X-GOTCHA": "1"}
+    )
+    batch_id = client.post("/api/import", files=[("files", (path.name, path.read_bytes()))]).json()[
+        "results"
+    ][0]["batch_id"]
+    exam_id = client.post(f"/api/batches/{batch_id}/confirm", json={"exam_name": "AZ-140"}).json()["exam_id"]
+    listed = client.get(f"/api/exams/{exam_id}/questions").json()
+    selfs = [q for q in listed if q["type"] == "self_assessed"]
+    assert len(selfs) == 125 and all(q["missing_images"] == 0 for q in selfs)
+    full = client.get(f"/api/questions/{selfs[0]['id']}").json()
+    sha = next(b["asset"] for b in full["answer_blocks"] if b["type"] == "image")
+    r = client.get(f"/api/assets/{sha}")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"

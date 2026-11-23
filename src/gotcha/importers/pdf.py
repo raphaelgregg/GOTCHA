@@ -7,9 +7,10 @@ from collections import Counter
 
 import pypdfium2 as pdfium
 
-from gotcha.domain.models import ParsedBatch
+from gotcha.domain.models import ImageRef, ParsedBatch
 
 from .base import Source, register
+from .pdf_images import associate, read_images, read_markers, split_decorative
 from .text_blocks import BlockRules, parse_blocks
 
 RULES = BlockRules(
@@ -66,17 +67,44 @@ class PdfImporter:
         questions, cases, warnings = parse_blocks(lines, RULES)
         if not questions:
             raise ValueError("Nenhuma questão encontrada no PDF.")
-        if any(q.kind.value == "interactive" for q in questions):
-            warnings.append(
-                "Imagens do PDF ainda não são extraídas; respostas em imagem ficam como anexo ausente."
-            )
+        assets: dict[str, bytes] = {}
+        warnings += self._attach_images(doc, questions, assets)
         return ParsedBatch(
             format=self.name,
             title=src.filename,
             questions=questions,
             cases=cases,
             warnings=warnings,
+            assets=assets,
         )
+
+    @staticmethod
+    def _attach_images(doc: pdfium.PdfDocument, questions: list, assets: dict[str, bytes]) -> list[str]:  # type: ignore[type-arg]
+        images, failed = read_images(doc)
+        kept, decorative = split_decorative(images, len(doc))
+        found = associate(read_markers(doc, RULES.heading, RULES.answer), kept)
+        by_number = {q.number: q for q in questions}
+        warnings: list[str] = []
+        for number, role, img in found.placed:
+            q = by_number.get(number)
+            if q is None:
+                found.orphans.append(img)
+                continue
+            assets[img.sha] = img.png
+            q.images.append(ImageRef(name=img.name, sha=img.sha, role=role))  # type: ignore[arg-type]
+        if found.orphans:
+            pages = sorted({i.page + 1 for i in found.orphans})
+            warnings.append(
+                f"{len(found.orphans)} imagem(ns) sem questão associada "
+                f"(páginas {', '.join(map(str, pages[:10]))})."
+            )
+        if decorative:
+            warnings.append(
+                f"{decorative} imagem(ns) decorativa(s) repetida(s) em várias páginas foram ignoradas."
+            )
+        if failed:
+            warnings.append(f"{failed} imagem(ns) do PDF não puderam ser extraídas.")
+        return warnings
 
 
 register(PdfImporter())

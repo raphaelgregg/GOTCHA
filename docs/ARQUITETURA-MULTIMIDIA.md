@@ -363,6 +363,7 @@ Implementado e verificado (280 testes no backend, 29 na interface, `ruff` e `myp
 | B | Editor de regiões sobre a imagem (desenhar, mover, ajustar números, marcar corretas) | `components/editor/RegionEditor.tsx` |
 | C | Case Study como entidade com seções, guardado uma vez e editável em um lugar | `qtypes/case.py`, `pages/CasePage.tsx` |
 | D | Editor universal: blocos (texto, imagem, tabela, código, anexo) com reposicionar, substituir, remover, alt, largura, alinhamento e legenda; prévia vinda do servidor; conversão entre tipos; criação de questão | `pages/EditorPage.tsx`, `qtypes/templates.py` |
+| E | Imagens do PDF: extração sem perda (PNG), posição na página, associação à questão por ordem de leitura (antes de `Explanation` é do enunciado, depois é a resposta), filtro de imagens decorativas e aviso do que ficou sem dono ou não pôde ser extraído | `importers/pdf_images.py` |
 | F | Active Screen: motor declarativo (componentes de lista fechada, estado, ações, condições JSON Logic), correção por reexecução no servidor e construtor por formulários | `qtypes/screen.py`, `qtypes/logic.py`, `web/src/lib/screen.ts` |
 | G | Lab nos três modos, sempre rotulados; o simulado reaproveita o motor do Active Screen; pontuação separada | `qtypes/interactive.py`, `renderers/lab.tsx` |
 
@@ -398,7 +399,7 @@ O motor do Active Screen e as condições existem em Python e em TypeScript. Os 
 
 ### O que ainda não está pronto
 
-- **Imagens do PDF não são extraídas.** Respostas em imagem continuam como anexo ausente até essa etapa (Fase E).
+- **Gráficos vetoriais do PDF** (tabelas e diagramas desenhados, que não são imagens embutidas) ainda não são capturados; só as imagens embutidas são extraídas. A captura por recorte renderizado continua prevista.
 - Alvos do **Drag and Drop sobre uma imagem de fundo**: o modelo e o validador suportam, mas a interface de prova e o editor ainda não posicionam os alvos sobre a imagem.
 - **Galeria de mídia** no editor (lista de todos os recursos usados, ausentes e órfãos): a API de órfãos existe, a tela não.
 - **Feedback configurável** do Build List e `min_items` do Drag and Drop não entram na correção.
@@ -406,3 +407,11 @@ O motor do Active Screen e as condições existem em Python e em TypeScript. Os 
 - **Adaptador QTI 3.0** (Release 2).
 - O construtor do Active Screen **não importa interfaces originais**, só constrói telas novas; o componente `image` não tem seletor de imagem no editor.
 - Atalhos de teclado e leitor de tela foram considerados nos renderizadores (regiões focáveis, alternativas, arrastar com teclado via `@dnd-kit`), mas **não passaram por auditoria de acessibilidade**.
+
+### Resultado da extração de imagens do PDF (medido no PDF AZ-140)
+
+- 341 questões; as **125 interativas ganharam a imagem de resposta** (nenhuma ficou sem).
+- 415 imagens de conteúdo extraídas (≈ 20 MB), 376 no enunciado e 126 como resposta.
+- 1 523 imagens decorativas (repetidas em quase todas as páginas) ignoradas e informadas no aviso do lote.
+- Nenhuma imagem de conteúdo sem questão associada. Importação em ≈ 12 s.
+- Fica a ressalva de que é **um** PDF, de um único gerador; PDFs de outros geradores podem associar imagens de forma diferente.

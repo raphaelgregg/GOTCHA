@@ -2,7 +2,7 @@
 
 Aplicativo **pessoal e local** para **importar exames (simulados) de certificação em vários formatos** (HTML, TXT, PDF, JSON, CSV/XLSX e VCE, este condicionado a validação), revisar as questões importadas, **montar simulados** a partir delas e **treinar com testes cronometrados**.
 
-> **Status:** Entregas 1A e 1B quase completas e a Fase 1C (multimídia e tipos interativos) implementada, exceto a extração de imagens do PDF e alguns itens listados no [TODO](#todo). Faltam também a fila persistente de jobs e os perfis de exame. Detalhes em [`PLAN.md`](PLAN.md) e [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md).
+> **Status:** Entregas 1A e 1B quase completas e a Fase 1C (multimídia e tipos interativos) implementada, incluindo as imagens do PDF, exceto alguns itens listados no [TODO](#todo). Faltam também a fila persistente de jobs e os perfis de exame. Detalhes em [`PLAN.md`](PLAN.md) e [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md).
 
 ## Princípios
 
@@ -203,7 +203,7 @@ Desenho e estado em [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMID
 - [x] C: Case Study como entidade com editor de contexto
 - [x] D: editor universal (blocos, imagens, prévia pelo servidor, conversão de tipo, criação de questão)
 - [ ] D: galeria de mídia no editor (recursos usados, ausentes e órfãos)
-- [ ] E: imagens do PDF com posição, órfãos e relatório de conversão na tela
+- [x] E: imagens do PDF extraídas sem perda, com posição, ligadas à questão por ordem de leitura; decorativas filtradas e órfãs informadas nos avisos do lote
 - [x] F: Active Screen (motor declarativo, correção por reexecução, construtor por formulários)
 - [x] G: Lab simulado, instruções externas e real, sempre rotulados
 - [ ] Alvos do Drag and Drop posicionados sobre uma imagem (interface e editor)
