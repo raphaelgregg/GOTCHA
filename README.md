@@ -101,6 +101,7 @@ tests/         testes primeiro: unidade, contrato, API, segurança, propriedades
 - [`PLAN.md`](PLAN.md): plataforma, fases, decisões, estratégia de testes (TDD), riscos e estimativas.
 - [`docs/VALIDACAO.md`](docs/VALIDACAO.md): sistemas similares, taxas de sucesso e classificação das ideias.
 - [`docs/REQUISITOS-UI.md`](docs/REQUISITOS-UI.md): requisitos de interface com critérios de aceitação.
+- [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md): questões multimídia, tipos interativos, formato `.gotcha` e plano de testes.
 - [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code neste repositório.
 
 ## TODO
@@ -188,6 +189,19 @@ Legenda: `[ ]` pendente · `[x]` concluído.
 - [x] Importador de PDF com texto e imagens (`pdfplumber` e `pypdfium2`) e ferramentas de revisão para layouts irregulares (texto; imagens do PDF ainda não são extraídas)
 - [x] Exportar e importar o banco (JSON)
 - [ ] Aviso de direito de uso no primeiro uso
+
+### Fase 1C — Multimídia e tipos interativos (requisito adicional)
+
+Desenho entregue em `docs/ARQUITETURA-MULTIMIDIA.md`; implementação aguarda as decisões da seção 16.
+
+- [x] Apresentar o desenho: modelos, recursos, hash, coordenadas, Active Screen, Case Study, Lab, preservação e testes
+- [ ] A: modelo canônico v2, registro de tipos, loja de recursos por hash, pacote `.gotcha` e migração
+- [ ] B: múltipla escolha e seleção portadas; Build List; Drag and Drop; Hot Area com editor de regiões
+- [ ] C: Case Study como entidade com editor de contexto
+- [ ] D: editor universal com gestão de mídia, prévia e conversão de tipo
+- [ ] E: imagens do PDF com posição, órfãos e relatório de conversão
+- [ ] F: Active Screen (motor declarativo e construtor)
+- [ ] G: Lab (simulado, instruções externas e real, sempre rotulados)
 
 ### Fase 2 — Release 2
 

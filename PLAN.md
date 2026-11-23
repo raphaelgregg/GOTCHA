@@ -4,6 +4,7 @@ Plano de implementação refinado. Escopo e decisões vêm do planejamento origi
 
 - Validação, taxas de sucesso e classificação das ideias: [`docs/VALIDACAO.md`](docs/VALIDACAO.md).
 - Requisitos de interface (referência: telas do VCE Player): [`docs/REQUISITOS-UI.md`](docs/REQUISITOS-UI.md).
+- Questões multimídia, tipos interativos e formato `.gotcha` (requisito adicional): [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md).
 
 > **Estado:** planejamento. Nenhuma funcionalidade foi implementada. Toda funcionalidade será desenvolvida **orientada a testes** (seção 5).
 
@@ -84,6 +85,14 @@ O maior risco é a premissa de partida (VCE). O spike da Fase 0 substitui estima
 | 20 | Resultado separa **pontuação automática** e **autoavaliada** | Não misturar nota objetiva com nota declarada |
 | 21 | Entrada aceita **ZIP** (página + pasta de recursos) e arquivo único; imagem ausente marca "anexo ausente" | As imagens das páginas salvas ficam em pasta à parte |
 | 22 | **Gerador de simulado** a partir do banco, com sorteio reproduzível por semente | Testável e repetível |
+| 23 | **Modelo canônico v2** com tipos próprios: múltipla escolha, múltipla seleção, drag and drop, build list, hot area, active screen, case study (contêiner) e lab; cada tipo com modelo, validador, renderizador, editor, corretor e serializador | Requisito adicional; sem "múltipla escolha disfarçada" |
+| 24 | **Pacote `.gotcha`**: ZIP aberto com `manifest`, JSON por questão e mídia embutida, verificado por SHA-256, sem URLs externas | Autossuficiente e portátil |
+| 25 | **Recursos por hash SHA-256**, sem recompressão; derivados rotulados (SVG sanitizado, páginas de PDF) | Dedupe e preservação |
+| 26 | **Hot Area com coordenadas normalizadas** (retângulo, círculo, polígono) sobre SVG com `viewBox` proporcional | Independe da resolução |
+| 27 | **Active Screen declarativo**: componentes de lista fechada, estado, ações e condições em JSON, sem executar código importado; correção no servidor reexecutando o registro de ações | Segurança e gabarito oculto |
+| 28 | **Lab** com modo obrigatório (`simulated`, `external_instructions`, `real`) e aviso fixo de que simulação não é execução real | Honestidade com o usuário |
+| 29 | **Tipo de transição `self_assessed`** para o que a importação não consegue reconstruir; conversível no editor | As amostras só trazem imagens, sem regiões nem itens (a aprovar) |
+| 30 | **Editor universal** único para importados e salvos, com gestão de mídia e prévia | Requisito adicional |
 
 Todas ficam como **Proposta** até aprovação do usuário.
 
@@ -165,6 +174,18 @@ Cada bloco começa pelos testes.
 11. **PDF:** extração de texto e imagens com `pdfplumber` e `pypdfium2`, ferramentas de revisão para layouts irregulares.
 12. **Dados:** exportar e importar o banco (JSON), aviso de direito de uso no primeiro uso.
 
+### Fase 1C — Multimídia e tipos interativos (requisito adicional, a aprovar)
+
+Desenho completo, testes e estimativas em [`docs/ARQUITETURA-MULTIMIDIA.md`](docs/ARQUITETURA-MULTIMIDIA.md). Ordem proposta, cada etapa utilizável por si:
+
+1. **A**: modelo canônico v2, registro de tipos, loja de recursos com hash, pacote `.gotcha` e migração.
+2. **B**: portar múltipla escolha e seleção; Build List; Drag and Drop; Hot Area com editor de regiões.
+3. **C**: Case Study como entidade com editor de contexto.
+4. **D**: editor universal (blocos, galeria de mídia, prévia, conversão de tipo).
+5. **E**: importadores com imagens do PDF, órfãos e relatório de conversão.
+6. **F**: Active Screen.
+7. **G**: Lab (reaproveita o motor de F).
+
 ### Fase 2 — Release 2 (camada B, mais C se aprovada)
 
 - Aiken, GIFT, Moodle XML; DOCX, QTI, OCR.
@@ -180,6 +201,7 @@ Cada bloco começa pelos testes.
 | Entrega 1B (anexos, estudo de caso, interativos, PDF) | 27 a 45 |
 | **MVP completo, sem VCE direto** | **65 a 105** (antes 45 a 72; o escopo cresceu: HTML, TXT, multipágina, interativos, gerador) |
 | VCE direto (adicional, se aprovado) | 8 a 25 |
+| **Fase 1C: multimídia e tipos interativos** (requisito adicional) | **87 a 142** (julgamento; ver o documento de arquitetura) |
 
 São estimativas de julgamento, não medições, e assumem testes. O que mais move a faixa é o PDF e a qualidade das imagens. Entregar em duas etapas permite usar o app já depois da 1A.
 
@@ -195,6 +217,9 @@ São estimativas de julgamento, não medições, e assumem testes. O que mais mo
 | Dependência das classes CSS do site no importador de HTML | Quebra se o site mudar | Detecção por estrutura; cada mudança vira caso de teste |
 | Texto convertido por IA fora do app pode ter erros | Questões ou gabaritos errados | Preferir a fonte original; aviso na revisão; comparar com o HTML quando houver |
 | Escopo do MVP maior | Atraso | Duas entregas; 1A já utilizável |
+| Hot Area e Drag and Drop importados só têm imagem, sem regiões | Importação automática não reconstrói o tipo | Tipo `self_assessed` de transição e autoria no editor; sem IA |
+| Construtor visual de Active Screen com escopo elástico | Atraso e fidelidade baixa | Lista fechada de componentes, fidelidade declarada ao usuário, modelos prontos |
+| Laboratório simulado confundido com execução real | Engano do usuário | Modo obrigatório e aviso fixo; GOTCHA nunca acessa infraestrutura de terceiros |
 | Engenharia reversa de formato fechado | Conflito com licença | Sem DRM; decisão do usuário (não é aconselhamento jurídico) |
 | Servidor local acessível por sites do navegador | Leitura/alteração dos dados | Só localhost, validação Host/Origin, token CSRF, testes |
 | Nota escalonada não linear | Estimativa enganosa | Percentual real + estimativa rotulada |
@@ -211,6 +236,7 @@ São estimativas de julgamento, não medições, e assumem testes. O que mais mo
 4. Aceitar "VCE → PDF no app original → GOTCHA" como caminho principal?
 5. Qual sistema operacional será usado (afeta o empacotamento da Fase 2)?
 6. Confirmação final: nenhuma IA em nenhuma etapa.
+7. Requisito multimídia: aprovar `self_assessed`, a definição de Hot Area, o formato `.gotcha` em ZIP aberto e a ordem das fases; informar o que é o formato INDEX (ver as decisões em `docs/ARQUITETURA-MULTIMIDIA.md`, seção 16).
 
 **Resolvido:** uso pessoal, usuário único, execução local.
 
