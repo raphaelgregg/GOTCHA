@@ -59,7 +59,7 @@ uv run pytest
 
 ## Git
 
-- Desenvolver na branch `claude/eager-galileo-ilie6p`.
+- Desenvolver na branch `claude-dev`.
 - Commits pequenos e organizados, com mensagem descritiva.
 - Não criar Pull Request sem pedido explícito.
 - Não reescrever histórico nem fazer push em outras branches sem permissão.
