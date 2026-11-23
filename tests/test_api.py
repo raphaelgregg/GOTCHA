@@ -255,3 +255,21 @@ def test_wrong_only_simulado_after_a_mistake(client: TestClient) -> None:
     assert [q["id"] for q in client.get(f"/api/sessions/{sid2}").json()["questions"]] == [
         qs[0]["id"]
     ]
+
+
+def test_interactive_question_can_reveal_its_answer_in_exam_mode(client: TestClient) -> None:
+    _, exam_id = make_exam(client)
+    sid = start(client, exam_id)
+    questions = client.get(f"/api/sessions/{sid}").json()["questions"]
+    interactive = next(q for q in questions if q["kind"] == "interactive")
+    single = next(q for q in questions if q["kind"] == "single")
+    assert client.get(f"/api/sessions/{sid}/solution/{interactive['id']}").status_code == 200
+    assert client.get(f"/api/sessions/{sid}/solution/{single['id']}").status_code == 403
+
+
+def test_result_carries_the_spec_to_repeat_only_the_wrong_ones(client: TestClient) -> None:
+    _, exam_id = make_exam(client)
+    sid = start(client, exam_id)
+    result = client.post(f"/api/sessions/{sid}/finish").json()
+    assert result["spec"]["exam_ids"] == [exam_id]
+    assert client.get(f"/api/sessions/{sid}/result").json()["spec"]["mode"] == "exam"

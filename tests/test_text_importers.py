@@ -214,3 +214,111 @@ def test_pdf_without_text_is_refused_with_guidance() -> None:
     empty = make_pdf([[""], [""]])
     with pytest.raises(ValueError, match=r"OCR|texto"):
         PdfImporter().parse(Source(filename="a.pdf", data=empty))
+
+
+def pdf_with(pages: list[list[str]]) -> ParsedBatch:
+    return PdfImporter().parse(Source(filename="a.pdf", data=make_pdf(pages)))
+
+
+def test_pdf_answer_letters_on_the_next_line() -> None:
+    pages = [
+        [
+            "Question #1",
+            "Qual?",
+            "A) um",
+            "B) dois",
+            "Explanation",
+            "Correct Answer:",
+            "B",
+            "Reference:",
+        ],
+        ["Question #2", "Qual?", "A) um", "B) dois", "Explanation", "Correct Answer:", "AB"],
+        ["Question #3", "Outra?", "A) x", "B) y", "Explanation", "Correct Answer:", "Reference:"],
+    ]
+    q1, q2, q3 = pdf_with(pages).questions
+    assert q1.answer == ["B"] and q2.answer == ["A", "B"] and q3.answer == []
+
+
+def test_pdf_header_with_page_number_is_removed_and_answer_survives_page_break() -> None:
+    pages = [
+        [
+            "Question #1",
+            "Qual?",
+            "A) um",
+            "B) dois",
+            "Explanation",
+            "Correct Answer:",
+            "1 Curso XX - Questoes",
+        ],
+        [
+            "2 Curso XX - Questoes",
+            "Page 2 of 3",
+            "B",
+            "Reference:",
+            "Question #2",
+            "Outra?",
+            "A) a",
+            "B) b",
+        ],
+        ["3 Curso XX - Questoes", "Explanation", "Correct Answer:", "A", "Page 3 of 3"],
+    ]
+    batch = pdf_with(pages)
+    assert [q.answer for q in batch.questions] == [["B"], ["A"]]
+    assert "Curso XX" not in " ".join(q.stem for q in batch.questions)
+
+
+def test_correct_answer_marker_is_stripped_from_choices_and_used_as_fallback() -> None:
+    pages = [
+        ["Question #1", "Qual?", "A) um", "B) dois (Correct Answer)", "C) tres", "Explanation"],
+        [
+            "Question #2",
+            "Outra?",
+            "A) x (Correct Answer)",
+            "B) y",
+            "Explanation",
+            "Correct Answer:",
+        ],
+        ["Question #3", "Mais?", "A) p", "B) q", "Explanation", "Correct Answer:", "A"],
+    ]
+    q1, q2, q3 = pdf_with(pages).questions
+    assert [c.text for c in q1.choices] == ["um", "dois", "tres"] and q1.answer == ["B"]
+    assert q2.choices[0].text == "x" and q2.answer == ["A"]
+    assert all("Correct Answer" not in c.text for q in (q1, q2, q3) for c in q.choices)
+
+
+def test_marker_and_answer_line_disagreement_warns_and_keeps_the_answer_line() -> None:
+    pages = [
+        [
+            "Question #1",
+            "Qual?",
+            "A) um (Correct Answer)",
+            "B) dois",
+            "Explanation",
+            "Correct Answer:",
+            "B",
+        ],
+        ["Question #2", "Outra?", "A) a", "B) b", "Explanation", "Correct Answer:", "A"],
+        ["Question #3", "Mais?", "A) p", "B) q", "Explanation", "Correct Answer:", "B"],
+    ]
+    q1 = pdf_with(pages).questions[0]
+    assert q1.answer == ["B"] and any("difere" in w for w in q1.warnings)
+
+
+def test_answer_lines_inside_community_discussion_are_ignored() -> None:
+    pages = [
+        [
+            "Question #1",
+            "Qual?",
+            "A) um",
+            "B) dois",
+            "Explanation",
+            "Correct Answer:",
+            "B",
+            "Community Discussion",
+            "Answer: A porque sim",
+            "Selected Answer: A",
+        ],
+        ["Question #2", "Outra?", "A) a", "B) b", "Explanation", "Correct Answer:", "A"],
+        ["Question #3", "Mais?", "A) p", "B) q", "Explanation", "Correct Answer:", "B"],
+    ]
+    assert pdf_with(pages).questions[0].answer == ["B"]

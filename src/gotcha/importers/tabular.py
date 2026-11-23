@@ -104,7 +104,10 @@ class CsvImporter:
             delim = csv.Sniffer().sniff(text[:2048], delimiters=",;\t").delimiter
         except csv.Error:
             delim = ","
-        rows = [list(r) for r in csv.reader(io.StringIO(text), delimiter=delim)]
+        try:
+            rows = [list(r) for r in csv.reader(io.StringIO(text), delimiter=delim)]
+        except csv.Error as exc:
+            raise ValueError(f"CSV inválido: {exc}") from exc
         return rows_to_batch(src.filename, rows, self.name)
 
 

@@ -18,14 +18,28 @@ RULES = BlockRules(
 )
 
 
-def repeated_lines(pages: list[list[str]], min_pages: int = 3, ratio: float = 0.6) -> set[str]:
-    """Cabeçalhos e rodapés: linhas que aparecem na maior parte das páginas."""
+_DIGITS = re.compile(r"\d+")
+_SECTION = re.compile(r"^(explanation|reference|community discussion)", re.I)
+
+
+def _structural(line: str) -> bool:
+    """Linhas que delimitam questões nunca são tratadas como cabeçalho ou rodapé."""
+    return bool(RULES.heading.match(line) or RULES.answer.match(line) or _SECTION.match(line))
+
+
+def _shape(line: str) -> str:
+    """Linha sem números, para reconhecer cabeçalhos como '14 Curso X' e '15 Curso X'."""
+    return _DIGITS.sub("#", line)
+
+
+def repeated_lines(pages: list[list[str]], min_pages: int = 3, ratio: float = 0.8) -> set[str]:
+    """Formas de linha (sem números) que aparecem na maior parte das páginas: cabeçalho/rodapé."""
     if len(pages) < min_pages:
         return set()
     counts: Counter[str] = Counter()
     for lines in pages:
-        counts.update(set(lines))
-    return {ln for ln, n in counts.items() if n / len(pages) >= ratio}
+        counts.update({_shape(ln) for ln in lines if ln and not _structural(ln)})
+    return {shape for shape, n in counts.items() if n / len(pages) >= ratio}
 
 
 class PdfImporter:
@@ -49,7 +63,12 @@ class PdfImporter:
                 "OCR ainda não é suportado."
             )
         noise = repeated_lines(pages)
-        lines = [ln for page in pages for ln in page if ln and ln not in noise]
+        lines = [
+            ln
+            for page in pages
+            for ln in page
+            if ln and (_structural(ln) or _shape(ln) not in noise)
+        ]
         questions, cases, warnings = parse_blocks(lines, RULES)
         if not questions:
             raise ValueError("Nenhuma questão encontrada no PDF.")

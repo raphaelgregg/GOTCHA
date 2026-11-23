@@ -24,6 +24,9 @@ _CASE_LABEL = re.compile(r"^(estudo de caso|case study)")
 _EXPLANATION = re.compile(r"^explanation|^explicacao", re.I)
 _SKIP_SECTION = re.compile(r"^(reference|community discussion)", re.I)
 _FOOTER = re.compile(r"^page \d+( of \d+)?$", re.I)
+_LETTERS_ONLY = re.compile(r"[A-F]{1,6}")
+# Alguns PDFs marcam a alternativa correta no próprio texto: "B) texto (Correct Answer)".
+_CORRECT_MARK = re.compile(r"\s*\((?:correct answer|resposta correta)\)\s*$", re.I)
 
 
 @dataclass(frozen=True)
@@ -41,6 +44,7 @@ class _Draft:
     explanation: list[str] = field(default_factory=list)
     images: list[ImageRef] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    marked: list[str] = field(default_factory=list)
     interactive: bool = False
     is_case: bool = False
 
@@ -76,17 +80,27 @@ def _read_block(number: int, lines: list[str], rules: BlockRules) -> _Draft:
     d = _Draft(number=number)
     body: list[str] = []
     section = "body"
+    awaiting_letters = False
     for line in lines:
-        am = rules.answer.match(line)
+        if _FOOTER.match(line):
+            continue
+        if awaiting_letters:
+            # a resposta pode vir na linha seguinte ao rótulo "Correct Answer:"
+            awaiting_letters = False
+            if _LETTERS_ONLY.fullmatch(line):
+                d.answer = parse_letters(line)
+                continue
+        am = rules.answer.match(line) if section != "skip" else None
         if am:
-            d.answer = parse_letters(am.group("a") or "")
+            letters = parse_letters(am.group("a") or "")
+            if letters or not d.answer:
+                d.answer = letters
+            awaiting_letters = not (am.group("a") or "").strip()
             section = "answer"
         elif _EXPLANATION.match(line):
             section = "explanation"
         elif _SKIP_SECTION.match(line):
             section = "skip"
-        elif _FOOTER.match(line):
-            continue
         elif section == "body":
             body.append(line)
         elif section == "explanation":
@@ -128,15 +142,28 @@ def _split_stem_and_choices(d: _Draft, body: list[str]) -> None:
         if m and m.group(1) == expected:
             d.choices.append(Choice(letter=expected, text=m.group(2).strip()))
             expected = chr(ord(expected) + 1)
+            _strip_marker(d)
         elif m and m.group(1) == "A" and d.choices:
             # um novo "A" reinicia: o que parecia alternativa era parte do enunciado
             d.stem_lines.extend(f"{c.letter}. {c.text}" for c in d.choices)
             d.choices = [Choice(letter="A", text=m.group(2).strip())]
+            d.marked = []
             expected = "B"
+            _strip_marker(d)
         elif d.choices:
             d.choices[-1] = Choice(letter=d.choices[-1].letter, text=f"{d.choices[-1].text} {line}")
+            _strip_marker(d)
         else:
             d.stem_lines.append(line)
+
+
+def _strip_marker(d: _Draft) -> None:
+    """Remove "(Correct Answer)" do fim da última alternativa e registra a letra marcada."""
+    last = d.choices[-1]
+    if _CORRECT_MARK.search(last.text):
+        d.choices[-1] = Choice(letter=last.letter, text=_CORRECT_MARK.sub("", last.text).strip())
+        if last.letter not in d.marked:
+            d.marked.append(last.letter)
 
 
 def _share_case_context(drafts: list[_Draft]) -> list[CaseStudy]:
@@ -178,15 +205,21 @@ def _finalize(d: _Draft) -> Question:
     case_id = next((w[5:] for w in d.warnings if w.startswith("case:")), None)
     warnings = [w for w in d.warnings if not w.startswith("case:")]
     hint = QuestionKind.INTERACTIVE if d.interactive else None
-    kind = infer_kind(d.choices, d.answer, hint)
+    answer = d.answer or sorted(d.marked)
+    if d.answer and d.marked and sorted(d.marked) != sorted(d.answer):
+        warnings.append(
+            f"O gabarito ({', '.join(d.answer)}) difere da alternativa marcada no texto "
+            f"({', '.join(sorted(d.marked))}). Confira na revisão."
+        )
+    kind = infer_kind(d.choices, answer, hint)
     if kind is not QuestionKind.INTERACTIVE:
-        warnings += validate_answer(d.choices, d.answer)
+        warnings += validate_answer(d.choices, answer)
     return Question(
         number=d.number,
         kind=kind,
         stem=plain_to_html("\n".join(d.stem_lines)),
         choices=d.choices,
-        answer=d.answer if kind is not QuestionKind.INTERACTIVE else [],
+        answer=answer if kind is not QuestionKind.INTERACTIVE else [],
         explanation="\n".join(d.explanation),
         images=d.images,
         case_id=case_id,

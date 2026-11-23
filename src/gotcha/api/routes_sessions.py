@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from gotcha.domain.builder import SimuladoSpec
 from gotcha.domain.exposure import public_view
 from gotcha.domain.grading import Response
+from gotcha.domain.models import QuestionKind
 from gotcha.storage.sessions import Result, SessionRow
 
 from .services import Services, services
@@ -54,6 +55,7 @@ def _state(svc: Services, s: SessionRow) -> dict[str, Any]:
 
 
 def _result(svc: Services, session_id: str, result: Result) -> dict[str, Any]:
+    spec = svc.sessions.get(session_id).spec
     details = []
     for d in result.details:
         q = svc.library.get_question(d.question_id)
@@ -63,6 +65,7 @@ def _result(svc: Services, session_id: str, result: Result) -> dict[str, Any]:
     s = result.summary
     return {
         "session_id": session_id,
+        "spec": spec.model_dump(mode="json"),
         "summary": {**s.__dict__, "auto_pct": s.auto_pct, "self_pct": s.self_pct},
         "duration_seconds": result.duration_seconds,
         "details": details,
@@ -133,10 +136,15 @@ def result(request: Request, session_id: str) -> dict[str, Any]:
 def solution(request: Request, session_id: str, question_id: str) -> dict[str, Any]:
     svc = services(request)
     s = svc.sessions.get(session_id)
-    if s.spec.mode != "study" and s.finished_at is None:
-        raise HTTPException(
-            403, "O gabarito só aparece no modo estudo ou depois de encerrar a prova."
-        )
     if question_id not in s.question_ids:
         raise HTTPException(404, "Questão não faz parte desta prova.")
-    return public_view(svc.library.get_question(question_id), reveal=True)
+    question = svc.library.get_question(question_id)
+    # Questões interativas são autoavaliadas: revelar a resposta faz parte do método.
+    open_to_reveal = (
+        s.spec.mode == "study"
+        or s.finished_at is not None
+        or question.kind is QuestionKind.INTERACTIVE
+    )
+    if not open_to_reveal:
+        raise HTTPException(403, "O gabarito só aparece no modo estudo ou ao encerrar a prova.")
+    return public_view(question, reveal=True)

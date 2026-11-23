@@ -43,12 +43,14 @@ def test_html_pages_overlap_is_keyed_by_topic_and_number() -> None:
     assert len(keys) == 100 and len(set(keys)) == 100
 
 
-def test_pdf_az140_extracts_all_questions() -> None:
+def test_pdf_az140_extracts_all_questions_with_answers_and_no_leaks() -> None:
     batch = load(sample("*az-140.pdf"))
     assert [q.number for q in batch.questions] == list(range(1, 342))
-    lettered = [q for q in batch.questions if q.kind is not QuestionKind.INTERACTIVE]
-    assert len(lettered) >= 200
-    assert all(set(q.answer) <= {c.letter for c in q.choices} for q in lettered)
+    scored = [q for q in batch.questions if q.kind is not QuestionKind.INTERACTIVE]
+    assert len(scored) == 216
+    assert all(q.answer for q in scored), "questão pontuável sem gabarito"
+    assert all(set(q.answer) <= {c.letter for c in q.choices} for q in scored)
+    assert not [c for q in scored for c in q.choices if "correct answer" in c.text.lower()]
 
 
 def test_txt_conversion_has_24_questions_and_one_shared_case() -> None:

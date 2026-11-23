@@ -2,7 +2,7 @@
 
 Aplicativo **pessoal e local** para **importar exames (simulados) de certificação em vários formatos** (HTML, TXT, PDF, JSON, CSV/XLSX e VCE, este condicionado a validação), revisar as questões importadas, **montar simulados** a partir delas e **treinar com testes cronometrados**.
 
-> **Status:** planejamento concluído, nenhuma funcionalidade implementada. Acompanhe em [`PLAN.md`](PLAN.md) e na seção [TODO](#todo).
+> **Status:** Entrega 1A implementada e grande parte da 1B (backend, importadores, interface web e testes). O PDF ainda não extrai imagens, e faltam a fila persistente de jobs e os perfis de exame. Veja o [TODO](#todo) e o [`PLAN.md`](PLAN.md).
 
 ## Princípios
 
@@ -59,6 +59,43 @@ Arquivos protegidos são recusados com orientação para exportar pelo aplicativ
 - **Nota escalonada:** exames reais usam nota de 1 a 1000, não linear. O app mostra o percentual real e, no máximo, uma estimativa rotulada como aproximação.
 - **Perfis de exame são dados, não código.** Duração e número de questões só entram com fonte oficial conferida. O AZ-800 e o AZ-801 foram aposentados em 30/09/2026 e substituídos pelo AZ-802; confirmar na fonte oficial ao cadastrar os perfis.
 
+## Como usar
+
+Requisitos: [uv](https://docs.astral.sh/uv/) (Python 3.12+) e Node 20+ (só para compilar a interface).
+
+```bash
+uv sync
+cd web && npm ci && npm run build && cd ..
+uv run gotcha
+```
+
+O app abre em `http://127.0.0.1:8765` e guarda os dados em `~/.gotcha` (mude com `--data-dir` ou `GOTCHA_DATA_DIR`).
+
+Fluxo: **importar** arquivos (vários de uma vez) → **revisar** e confirmar → **Novo simulado** → fazer a prova → ver o resultado.
+
+Desenvolvimento:
+
+```bash
+uv run pytest                 # testes do backend (use -m "not samples" sem arquivos reais)
+uv run ruff check . && uv run mypy
+cd web && npm test && npm run dev   # interface com recarga; a API precisa estar em 127.0.0.1:8765
+```
+
+Arquivos reais para testar os importadores ficam em `samples/` (ignorada pelo git).
+
+## Estrutura
+
+```text
+src/gotcha/
+  domain/      modelos, correção por tipo, gerador de simulado, sanitização, exposição
+  importers/   um plugin por formato (txt, html, pdf, csv, xlsx, json) + ZIP e detecção
+  storage/     SQLite: biblioteca (rascunhos, exames, imagens) e sessões de prova
+  api/         FastAPI, segurança local (Host/Origin/cabeçalho) e rotas
+  sandbox.py   importação em subprocesso com tempo, memória e sem rede
+web/src/       React + Vite: páginas, componentes reutilizáveis, hooks e lógica pura (lib/)
+tests/         testes primeiro: unidade, contrato, API, segurança, propriedades, amostras reais
+```
+
 ## Documentação
 
 - [`PLAN.md`](PLAN.md): plataforma, fases, decisões, estratégia de testes (TDD), riscos e estimativas.
@@ -77,9 +114,9 @@ Legenda: `[ ]` pendente · `[x]` concluído.
 - [x] Validar a ideia contra sistemas similares e classificar as funcionalidades (`docs/VALIDACAO.md`)
 - [x] Definir a plataforma: aplicativo local de usuário único (FastAPI + SPA + SQLite)
 - [x] Registrar os requisitos de interface (`docs/REQUISITOS-UI.md`)
-- [ ] Criar o scaffold: `pyproject.toml` (uv), estrutura de pastas, `.env.example`, `.editorconfig`
-- [ ] Configurar CI: `ruff`, `mypy --strict`, `pytest` e checagem que falha se houver dependência de IA ou PyMuPDF
-- [ ] Configurar `hypothesis`, Playwright e a suíte de contrato de plugins (antes de qualquer importador)
+- [x] Criar o scaffold: `pyproject.toml` (uv), estrutura de pastas, `.env.example`, `.editorconfig` (`pyproject.toml`, `web/`, CI em `.github/workflows/ci.yml`)
+- [x] Configurar CI: `ruff`, `mypy --strict`, `pytest` e checagem que falha se houver dependência de IA ou PyMuPDF
+- [x] Configurar `hypothesis`, Playwright e a suíte de contrato de plugins (antes de qualquer importador) (property tests feitos; Playwright e2e ainda não está no repositório)
 - [ ] Registrar as decisões arquiteturais (ADRs) em `docs/adr/`
 - [ ] Ler os termos da Avanset e registrar o que permitem
 
@@ -101,55 +138,55 @@ Legenda: `[ ]` pendente · `[x]` concluído.
 
 **Fundação e segurança local**
 
-- [ ] Modelo de dados SQLite: lotes, rascunhos, exames, tópicos, questões, sessões, tentativas
-- [ ] Servidor só em `127.0.0.1`, validação de `Host`/`Origin` e token anti-CSRF
-- [ ] Sanitização de HTML dos enunciados importados
+- [x] Modelo de dados SQLite: lotes, rascunhos, exames, tópicos, questões, sessões, tentativas
+- [x] Servidor só em `127.0.0.1`, validação de `Host`/`Origin` e token anti-CSRF (proteção por cabeçalho `X-GOTCHA` + Host/Origin; sem token por sessão)
+- [x] Sanitização de HTML dos enunciados importados
 
 **Núcleo de domínio**
 
-- [ ] Chave de questão (exame, tópico, número)
-- [ ] Tipos de questão como plugins: múltipla escolha, múltipla resposta (quantidade exata), verdadeiro/falso
-- [ ] Corretores e cálculo de nota
+- [x] Chave de questão (exame, tópico, número)
+- [x] Tipos de questão como plugins: múltipla escolha, múltipla resposta (quantidade exata), verdadeiro/falso
+- [x] Corretores e cálculo de nota
 
 **Importação**
 
-- [ ] Interface do plugin de importação (detecção por conteúdo, vários arquivos, um lote por arquivo)
-- [ ] Importador de TXT simples (linhas indentadas, sem presumir acentuação, marcadores de imagem e de configuração manual)
-- [ ] Importadores de JSON e CSV/XLSX com mapeamento de colunas
-- [ ] Importador de HTML salvo (questões com alternativas, resposta, votos, tabelas e código no enunciado)
-- [ ] Fila de jobs em SQLite e worker em subprocesso, sem rede e com limites
+- [x] Interface do plugin de importação (detecção por conteúdo, vários arquivos, um lote por arquivo)
+- [x] Importador de TXT simples (linhas indentadas, sem presumir acentuação, marcadores de imagem e de configuração manual)
+- [x] Importadores de JSON e CSV/XLSX com mapeamento de colunas
+- [x] Importador de HTML salvo (questões com alternativas, resposta, votos, tabelas e código no enunciado)
+- [ ] Fila de jobs em SQLite (o subprocesso com tempo, memória e sem rede já existe; a fila persistente não)
 
 **Revisão e biblioteca**
 
-- [ ] Tela de revisão: dividir, mesclar, reatribuir alternativas e gabarito
-- [ ] Agrupar vários arquivos no mesmo exame, com deduplicação por (tópico, número)
-- [ ] Confirmação do lote com opção de desfazer
-- [ ] Lista de exames: adicionar, renomear, remover, propriedades, histórico
+- [ ] Tela de revisão: dividir (editar, unir, excluir e reatribuir gabarito já existem)
+- [x] Agrupar vários arquivos no mesmo exame, com deduplicação por (tópico, número)
+- [x] Confirmação do lote com opção de desfazer
+- [x] Lista de exames: adicionar, renomear, remover, propriedades, histórico (histórico em página própria)
 
 **Gerador de simulado**
 
-- [ ] Escolher exames e tópicos, quantidade, ordem aleatória reproduzível por semente
-- [ ] Filtros: só erradas, só marcadas, só não respondidas
-- [ ] Salvar e reutilizar a definição do simulado
+- [x] Escolher exames e tópicos, quantidade, ordem aleatória reproduzível por semente
+- [x] Filtros: só erradas, só marcadas, só não respondidas
+- [x] Salvar e reutilizar a definição do simulado
 
 **Prova**
 
-- [ ] Modos estudo e prova (gabarito ausente da interface em modo prova)
-- [ ] Marcar, revisar, mostrar lista, anterior/próxima
-- [ ] Cronômetro com o backend como fonte do tempo
-- [ ] Salvar sessão e retomar
-- [ ] Resultado com percentual real e estimativa escalonada rotulada como aproximação
+- [x] Modos estudo e prova (gabarito ausente da interface em modo prova)
+- [x] Marcar, revisar, mostrar lista, anterior/próxima
+- [x] Cronômetro com o backend como fonte do tempo
+- [x] Salvar sessão e retomar
+- [ ] Estimativa escalonada rotulada como aproximação (o percentual real já aparece)
 - [ ] Perfis de exame como dados, com fonte oficial conferida
 
 ### Fase 1 — Entrega 1B: imagens, interativos e PDF
 
-- [ ] Entrada em ZIP (página + pasta de recursos) e arquivo único; "anexo ausente" quando faltar imagem
-- [ ] Exhibit com zoom e imagens nos enunciados
-- [ ] Estudo de caso como entidade com contexto compartilhado
-- [ ] Tipos interativos importados com imagem da resposta, pontuados por autoavaliação ("revelar e marcar")
-- [ ] Resultado separando pontuação automática e autoavaliada
-- [ ] Importador de PDF com texto e imagens (`pdfplumber` e `pypdfium2`) e ferramentas de revisão para layouts irregulares
-- [ ] Exportar e importar o banco (JSON)
+- [x] Entrada em ZIP (página + pasta de recursos) e arquivo único; "anexo ausente" quando faltar imagem
+- [x] Exhibit com zoom e imagens nos enunciados
+- [x] Estudo de caso como entidade com contexto compartilhado
+- [x] Tipos interativos importados com imagem da resposta, pontuados por autoavaliação ("revelar e marcar")
+- [x] Resultado separando pontuação automática e autoavaliada
+- [x] Importador de PDF com texto e imagens (`pdfplumber` e `pypdfium2`) e ferramentas de revisão para layouts irregulares (texto; imagens do PDF ainda não são extraídas)
+- [x] Exportar e importar o banco (JSON)
 - [ ] Aviso de direito de uso no primeiro uso
 
 ### Fase 2 — Release 2
