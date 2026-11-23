@@ -17,9 +17,7 @@ CSV = """numero,topico,pergunta,A,B,C,D,resposta,explicacao
 def test_csv_with_portuguese_headers() -> None:
     batch = CsvImporter().parse(Source(filename="a.csv", data=CSV.encode()))
     q1, q2 = batch.questions
-    assert (
-        q1.kind is QuestionKind.SINGLE and q1.answer == ["A"] and q1.explanation == "Fica no Sena"
-    )
+    assert q1.kind is QuestionKind.SINGLE and q1.answer == ["A"] and q1.explanation == "Fica no Sena"
     assert q2.kind is QuestionKind.MULTIPLE and q2.answer == ["A", "C"]
     assert [c.text for c in q2.choices] == ["Maca", "Pedra", "Banana", "Ferro"]
 

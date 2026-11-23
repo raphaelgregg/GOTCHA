@@ -13,6 +13,7 @@ dependencies = [
   "pypdfium2>=4.30",
   "openpyxl>=3.1",
   "nh3>=0.2.18",
+  "pillow>=13.0.0",
 ]
 
 [project.scripts]
@@ -27,6 +28,7 @@ dev = [
   "ruff>=0.6",
   "mypy>=1.11",
   "types-openpyxl>=3.1.5.20261122",
+  "lxml-stubs>=0.5.1",
 ]
 
 [build-system]
@@ -42,7 +44,7 @@ addopts = "-q"
 markers = ["samples: usa arquivos reais em samples/ (ignorados no CI)"]
 
 [tool.ruff]
-line-length = 100
+line-length = 110
 src = ["src", "tests"]
 
 [tool.ruff.lint]

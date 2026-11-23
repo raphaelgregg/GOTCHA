@@ -53,9 +53,7 @@ class HtmlImporter:
                 batch.assets[sha] = data
             else:
                 warnings.append(f"Anexo ausente: {name}.")
-            images.append(
-                ImageRef(name=name, sha=sha, role="answer" if role == "answer" else "stem")
-            )
+            images.append(ImageRef(name=name, sha=sha, role="answer" if role == "answer" else "stem"))
 
         stem_el = next(
             (

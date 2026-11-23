@@ -65,7 +65,5 @@ def detect(src: Source) -> Importer:
     scored = sorted(((imp.sniff(src), imp) for imp in _REGISTRY.values()), key=lambda t: -t[0])
     best_score, best = scored[0]
     if best_score < MIN_CONFIDENCE:
-        raise UnsupportedFormat(
-            "Formato não reconhecido. Formatos aceitos: " + ", ".join(names()) + "."
-        )
+        raise UnsupportedFormat("Formato não reconhecido. Formatos aceitos: " + ", ".join(names()) + ".")
     return best

@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Body, HTTPException, Request
 from pydantic import BaseModel
 
 from gotcha.domain.builder import SimuladoSpec
-from gotcha.domain.exposure import public_view
-from gotcha.domain.grading import Response
-from gotcha.domain.models import QuestionKind
+from gotcha.qtypes import group_of, public_view
 from gotcha.storage.sessions import Result, SessionRow
 
 from .services import Services, services
@@ -18,19 +16,13 @@ from .services import Services, services
 router = APIRouter(prefix="/api")
 
 
-class ResponseBody(BaseModel):
-    selected: list[str] = []
-    self_mark: bool | None = None
-
-
 class MarkBody(BaseModel):
     marked: bool
 
 
-def _cases(svc: Services, question_cases: list[str | None]) -> dict[str, Any]:
+def _cases(svc: Services, case_ids: list[str | None]) -> dict[str, Any]:
     return {
-        cid: svc.library.get_case(cid).model_dump(mode="json")
-        for cid in sorted({c for c in question_cases if c})
+        cid: svc.library.get_case(cid).model_dump(mode="json") for cid in sorted({c for c in case_ids if c})
     }
 
 
@@ -45,32 +37,33 @@ def _state(svc: Services, s: SessionRow) -> dict[str, Any]:
         "time_limit_seconds": s.limit_seconds,
         "elapsed_seconds": int(svc.sessions.elapsed(s)),
         "paused": s.resumed_at is None and not reveal,
-        "questions": [public_view(q, reveal) for q in questions],
-        "responses": {
-            k: {"selected": v.selected, "self_mark": v.self_mark} for k, v in s.responses.items()
-        },
+        "questions": [public_view(q, reveal, s.seed) for q in questions],
+        "responses": s.responses,
         "marks": sorted(s.marks),
         "cases": _cases(svc, [q.case_id for q in questions]),
     }
 
 
 def _result(svc: Services, session_id: str, result: Result) -> dict[str, Any]:
-    spec = svc.sessions.get(session_id).spec
+    s = svc.sessions.get(session_id)
     details = []
     for d in result.details:
         q = svc.library.get_question(d.question_id)
-        details.append({**public_view(q, reveal=True), **d.model_dump(mode="json")})
-    for item in details:  # `id` da questão e `question_id` do detalhe coincidem
-        item["id"] = item["question_id"]
-    s = result.summary
+        details.append({**public_view(q, True, s.seed), **d.model_dump(mode="json")})
+    summary = result.summary
     return {
         "session_id": session_id,
-        "spec": spec.model_dump(mode="json"),
-        "summary": {**s.__dict__, "auto_pct": s.auto_pct, "self_pct": s.self_pct},
+        "spec": s.spec.model_dump(mode="json"),
+        "summary": {
+            **summary.__dict__,
+            "auto_pct": summary.auto_pct,
+            "self_pct": summary.self_pct,
+            "lab_pct": summary.lab_pct,
+        },
         "duration_seconds": result.duration_seconds,
         "details": details,
         "cases": _cases(svc, [d["case_id"] for d in details]),
-    }
+    }  # fmt: skip
 
 
 @router.post("/simulados")
@@ -91,11 +84,9 @@ def get_session(request: Request, session_id: str) -> dict[str, Any]:
 
 @router.put("/sessions/{session_id}/responses/{question_id}")
 def answer(
-    request: Request, session_id: str, question_id: str, body: ResponseBody
+    request: Request, session_id: str, question_id: str, body: Annotated[dict[str, Any], Body()]
 ) -> dict[str, str]:
-    services(request).sessions.answer(
-        session_id, question_id, Response(selected=body.selected, self_mark=body.self_mark)
-    )
+    services(request).sessions.answer(session_id, question_id, body)
     return {"status": "ok"}
 
 
@@ -139,12 +130,8 @@ def solution(request: Request, session_id: str, question_id: str) -> dict[str, A
     if question_id not in s.question_ids:
         raise HTTPException(404, "Questão não faz parte desta prova.")
     question = svc.library.get_question(question_id)
-    # Questões interativas são autoavaliadas: revelar a resposta faz parte do método.
-    open_to_reveal = (
-        s.spec.mode == "study"
-        or s.finished_at is not None
-        or question.kind is QuestionKind.INTERACTIVE
-    )
+    # Questões autoavaliadas: revelar a resposta faz parte do método.
+    open_to_reveal = s.spec.mode == "study" or s.finished_at is not None or group_of(question) == "self"
     if not open_to_reveal:
         raise HTTPException(403, "O gabarito só aparece no modo estudo ou ao encerrar a prova.")
-    return public_view(question, reveal=True)
+    return public_view(question, True, s.seed)

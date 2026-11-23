@@ -9,9 +9,7 @@ from tests.html_fixture import card, page
 
 
 def test_detect_picks_importer_by_content() -> None:
-    importer = detect(
-        Source(filename="sem_extensao", data=page(card(1, choices=["a", "b"], answer="A")))
-    )
+    importer = detect(Source(filename="sem_extensao", data=page(card(1, choices=["a", "b"], answer="A"))))
     assert importer.name == "html"
 
 

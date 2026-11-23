@@ -29,15 +29,11 @@ def create_app(
 
     def error(status: int) -> Callable[[Request, Exception], JSONResponse]:
         def handler(_: Request, exc: Exception) -> JSONResponse:
-            return JSONResponse(
-                {"detail": str(exc.args[0] if exc.args else exc)}, status_code=status
-            )
+            return JSONResponse({"detail": str(exc.args[0] if exc.args else exc)}, status_code=status)
 
         return handler
 
-    app.add_exception_handler(
-        KeyError, lambda _r, _e: JSONResponse({"detail": "Não encontrado."}, 404)
-    )
+    app.add_exception_handler(KeyError, lambda _r, _e: JSONResponse({"detail": "Não encontrado."}, 404))
     app.add_exception_handler(ValueError, error(400))
     app.add_exception_handler(TimeExpired, error(409))
     app.add_exception_handler(SessionFinished, error(409))

@@ -65,9 +65,7 @@ def run_isolated(target: str, *args: Any, timeout: float = 60, memory_mb: int = 
     """Executa `modulo:funcao(*args)` em um subprocesso e devolve o resultado."""
     ctx = mp.get_context("spawn")
     parent, child = ctx.Pipe(duplex=False)
-    proc = ctx.Process(
-        target=_child, args=(child, target, args, memory_mb, int(timeout) + 5), daemon=True
-    )
+    proc = ctx.Process(target=_child, args=(child, target, args, memory_mb, int(timeout) + 5), daemon=True)
     proc.start()
     child.close()
     try:

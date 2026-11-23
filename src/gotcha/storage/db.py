@@ -16,11 +16,17 @@ CREATE TABLE IF NOT EXISTS batches (
   id TEXT PRIMARY KEY, filename TEXT NOT NULL, format TEXT NOT NULL, title TEXT NOT NULL,
   status TEXT NOT NULL, exam_id TEXT, created_at REAL NOT NULL, payload TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS cases (
-  id TEXT PRIMARY KEY, exam_id TEXT NOT NULL, batch_id TEXT, title TEXT, text TEXT NOT NULL);
+  id TEXT PRIMARY KEY, exam_id TEXT NOT NULL, batch_id TEXT, title TEXT, text TEXT NOT NULL,
+  data TEXT);
 CREATE TABLE IF NOT EXISTS questions (
   id TEXT PRIMARY KEY, exam_id TEXT NOT NULL, batch_id TEXT, topic INTEGER NOT NULL,
-  number INTEGER NOT NULL, data TEXT NOT NULL, UNIQUE (exam_id, topic, number));
-CREATE TABLE IF NOT EXISTS assets (sha TEXT PRIMARY KEY, data BLOB NOT NULL);
+  number INTEGER NOT NULL, data TEXT NOT NULL, fingerprint TEXT,
+  UNIQUE (exam_id, topic, number));
+CREATE TABLE IF NOT EXISTS assets (
+  sha TEXT PRIMARY KEY, data BLOB NOT NULL, mime TEXT, width INTEGER, height INTEGER,
+  pages INTEGER, size INTEGER, view_data BLOB, names TEXT, origin TEXT, conversion TEXT,
+  default_alt TEXT);
+CREATE TABLE IF NOT EXISTS asset_refs (owner TEXT NOT NULL, sha TEXT NOT NULL, PRIMARY KEY (owner, sha));
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY, spec TEXT NOT NULL, created_at REAL NOT NULL, finished_at REAL,
   question_ids TEXT NOT NULL, responses TEXT NOT NULL, marks TEXT NOT NULL,
@@ -38,6 +44,24 @@ class Database:
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA foreign_keys=ON")
         self._conn.executescript(SCHEMA)
+        self._upgrade()
+
+    def _upgrade(self) -> None:
+        """Bancos criados por versões anteriores ganham as colunas novas."""
+        wanted = {
+            "assets": {
+                "mime": "TEXT", "width": "INTEGER", "height": "INTEGER", "pages": "INTEGER",
+                "size": "INTEGER", "view_data": "BLOB", "names": "TEXT", "origin": "TEXT",
+                "conversion": "TEXT", "default_alt": "TEXT",
+            },
+            "cases": {"data": "TEXT"},
+            "questions": {"fingerprint": "TEXT"},
+        }  # fmt: skip
+        for table, columns in wanted.items():
+            have = {r["name"] for r in self._conn.execute(f"PRAGMA table_info({table})")}
+            for name, decl in columns.items():
+                if name not in have:
+                    self._conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
 
     def execute(self, sql: str, params: Sequence[Any] = ()) -> sqlite3.Cursor:
         with self._lock:

@@ -24,9 +24,7 @@ def test_infer_interactive_without_choices() -> None:
 
 
 def test_hint_interactive_wins() -> None:
-    assert (
-        infer_kind(ch("a", "b"), ["A"], hint=QuestionKind.INTERACTIVE) is QuestionKind.INTERACTIVE
-    )
+    assert infer_kind(ch("a", "b"), ["A"], hint=QuestionKind.INTERACTIVE) is QuestionKind.INTERACTIVE
 
 
 def test_parse_letters_variants() -> None:

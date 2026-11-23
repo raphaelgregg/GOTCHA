@@ -126,9 +126,7 @@ class XlsxImporter:
     def parse(self, src: Source) -> ParsedBatch:
         wb = load_workbook(io.BytesIO(src.data), read_only=True, data_only=True)
         ws = wb.worksheets[0]
-        rows = [
-            ["" if c is None else str(c) for c in row] for row in ws.iter_rows(values_only=True)
-        ]
+        rows = [["" if c is None else str(c) for c in row] for row in ws.iter_rows(values_only=True)]
         return rows_to_batch(src.filename, rows, self.name)
 
 

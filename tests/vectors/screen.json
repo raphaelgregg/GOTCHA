@@ -1,0 +1,86 @@
+[
+  {
+    "name": "set e goto por botão",
+    "spec": {
+      "start": "a",
+      "state": {"done": {"type": "bool", "initial": false}},
+      "screens": [
+        {"id": "a", "components": [{"id": "next", "type": "button", "label": "Ir",
+          "on_click": [{"do": "set", "var": "done", "value": true}, {"do": "goto", "screen": "b"}]}]},
+        {"id": "b", "components": [{"id": "back", "type": "button", "label": "Voltar", "on_click": [{"do": "goto", "screen": "a"}]}]}
+      ]
+    },
+    "events": [{"component": "next", "type": "click"}],
+    "expect": {"state": {"done": true}, "screen": "b", "ignored": 0}
+  },
+  {
+    "name": "campo, seletor e alternador com validação de valor",
+    "spec": {
+      "start": "a",
+      "state": {"ip": {"type": "string", "initial": ""}, "mode": {"type": "string", "initial": "x"}, "on": {"type": "bool", "initial": false}},
+      "screens": [{"id": "a", "components": [
+        {"id": "ip", "type": "input", "bind": "ip"},
+        {"id": "mode", "type": "select", "bind": "mode", "options": [{"id": "x", "label": "X"}, {"id": "y", "label": "Y"}]},
+        {"id": "on", "type": "toggle", "bind": "on"}
+      ]}]
+    },
+    "events": [
+      {"component": "ip", "type": "change", "value": "10.0.0.1"},
+      {"component": "mode", "type": "change", "value": "y"},
+      {"component": "mode", "type": "change", "value": "zzz"},
+      {"component": "on", "type": "change", "value": "sim"},
+      {"component": "on", "type": "change", "value": true}
+    ],
+    "expect": {"state": {"ip": "10.0.0.1", "mode": "y", "on": true}, "screen": "a", "ignored": 2}
+  },
+  {
+    "name": "componente desabilitado ou oculto ignora o evento",
+    "spec": {
+      "start": "a",
+      "state": {"allow": {"type": "bool", "initial": false}, "n": {"type": "number", "initial": 0}},
+      "screens": [{"id": "a", "components": [
+        {"id": "b1", "type": "button", "enabled_if": {"var": "allow"}, "on_click": [{"do": "set", "var": "n", "value": 1}]},
+        {"id": "b2", "type": "button", "visible_if": {"var": "allow"}, "on_click": [{"do": "set", "var": "n", "value": 2}]},
+        {"id": "en", "type": "toggle", "bind": "allow"}
+      ]}]
+    },
+    "events": [
+      {"component": "b1", "type": "click"},
+      {"component": "b2", "type": "click"},
+      {"component": "en", "type": "change", "value": true},
+      {"component": "b1", "type": "click"}
+    ],
+    "expect": {"state": {"allow": true, "n": 1}, "screen": "a", "ignored": 2}
+  },
+  {
+    "name": "abas, menu e tabela",
+    "spec": {
+      "start": "a",
+      "state": {"tab": {"type": "string", "initial": "t1"}, "row": {"type": "string", "initial": ""}, "picked": {"type": "string", "initial": ""}},
+      "screens": [{"id": "a", "components": [
+        {"id": "tabs", "type": "tabs", "bind": "tab", "options": [{"id": "t1", "label": "1"}, {"id": "t2", "label": "2"}]},
+        {"id": "menu", "type": "menu", "items": [{"id": "m1", "label": "Abrir", "on_click": [{"do": "set", "var": "picked", "value": "m1"}]}]},
+        {"id": "tbl", "type": "table", "bind": "row", "columns": ["Nome"], "rows": [{"id": "r1", "cells": ["a"]}, {"id": "r2", "cells": ["b"]}]}
+      ]}]
+    },
+    "events": [
+      {"component": "tabs", "type": "change", "value": "t2"},
+      {"component": "menu", "type": "click", "value": "m1"},
+      {"component": "tbl", "type": "change", "value": "r2"},
+      {"component": "tbl", "type": "change", "value": "r9"}
+    ],
+    "expect": {"state": {"tab": "t2", "picked": "m1", "row": "r2"}, "screen": "a", "ignored": 1}
+  },
+  {
+    "name": "append, toggle e message",
+    "spec": {
+      "start": "a",
+      "state": {"log": {"type": "list", "initial": []}, "flag": {"type": "bool", "initial": false}},
+      "screens": [{"id": "a", "components": [
+        {"id": "b", "type": "button", "on_click": [{"do": "append", "var": "log", "value": "x"}, {"do": "toggle", "var": "flag"}, {"do": "message", "text": "ok"}]}
+      ]}]
+    },
+    "events": [{"component": "b", "type": "click"}, {"component": "b", "type": "click"}],
+    "expect": {"state": {"log": ["x", "x"], "flag": false}, "screen": "a", "ignored": 0, "messages": ["ok", "ok"]}
+  }
+]

@@ -17,9 +17,7 @@ from .common import fold, infer_kind, parse_letters, plain_to_html, validate_ans
 _OPTION = re.compile(r"^([A-F])[\.\)]\s+(.+)$")
 _IMAGE_PLACEHOLDER = re.compile(r"\[INSERIR IMAGEM MANUALMENTE:\s*([^\]]+)\]", re.I)
 _MANUAL_PLACEHOLDER = re.compile(r"\[CONFIGURACAO MANUAL:\s*([^\]]*)\]", re.I)
-_INTERACTIVE_LABEL = re.compile(
-    r"^(hotspot|drag\s*drop|area quente|arrastar|simulacao|simulation|lab\b)"
-)
+_INTERACTIVE_LABEL = re.compile(r"^(hotspot|drag\s*drop|area quente|arrastar|simulacao|simulation|lab\b)")
 _CASE_LABEL = re.compile(r"^(estudo de caso|case study)")
 _EXPLANATION = re.compile(r"^explanation|^explicacao", re.I)
 _SKIP_SECTION = re.compile(r"^(reference|community discussion)", re.I)
@@ -49,9 +47,7 @@ class _Draft:
     is_case: bool = False
 
 
-def parse_blocks(
-    lines: list[str], rules: BlockRules
-) -> tuple[list[Question], list[CaseStudy], list[str]]:
+def parse_blocks(lines: list[str], rules: BlockRules) -> tuple[list[Question], list[CaseStudy], list[str]]:
     drafts: list[_Draft] = []
     current: list[str] | None = None
     chunks: list[tuple[int, list[str]]] = []

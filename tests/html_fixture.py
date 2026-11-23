@@ -18,11 +18,7 @@ def card(
     lis = ""
     for i, text in enumerate(choices or []):
         letter = "ABCDEF"[i]
-        badge = (
-            '<span class="badge most-voted-answer-badge">Most Voted</span>'
-            if letter in voted
-            else ""
-        )
+        badge = '<span class="badge most-voted-answer-badge">Most Voted</span>' if letter in voted else ""
         lis += (
             f'<li class="multi-choice-item" data-choice-letter="{letter}">'
             f'<span class="multi-choice-letter">{letter}.</span> {escape(text)}{badge}</li>'

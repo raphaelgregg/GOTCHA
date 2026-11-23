@@ -59,23 +59,16 @@ class PdfImporter:
         ]
         if sum(len(" ".join(p).strip()) for p in pages) < 20 * max(1, len(pages)) // 2:
             raise ValueError(
-                "O PDF não contém texto selecionável (pode ser digitalizado). "
-                "OCR ainda não é suportado."
+                "O PDF não contém texto selecionável (pode ser digitalizado). OCR ainda não é suportado."
             )
         noise = repeated_lines(pages)
-        lines = [
-            ln
-            for page in pages
-            for ln in page
-            if ln and (_structural(ln) or _shape(ln) not in noise)
-        ]
+        lines = [ln for page in pages for ln in page if ln and (_structural(ln) or _shape(ln) not in noise)]
         questions, cases, warnings = parse_blocks(lines, RULES)
         if not questions:
             raise ValueError("Nenhuma questão encontrada no PDF.")
         if any(q.kind.value == "interactive" for q in questions):
             warnings.append(
-                "Imagens do PDF ainda não são extraídas; "
-                "respostas em imagem ficam como anexo ausente."
+                "Imagens do PDF ainda não são extraídas; respostas em imagem ficam como anexo ausente."
             )
         return ParsedBatch(
             format=self.name,
