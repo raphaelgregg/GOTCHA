@@ -1,0 +1,24 @@
+# Arquivos de amostra de simulados (nunca commitar)
+samples/
+
+# Segredos e ambiente
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Editor / SO
+.idea/
+.vscode/
+.DS_Store
