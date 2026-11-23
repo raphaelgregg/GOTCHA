@@ -318,3 +318,91 @@ Sem serviços externos. Dependências novas previstas: **Pillow** (dimensões e 
 4. `.gotcha` como **ZIP aberto e documentado**, sem criptografia. Aprovado?
 5. **Ordem das fases**: A, B, C, D, E, F, G, ou você prioriza outra (por exemplo, Active Screen antes do editor universal)?
 6. Para Lab `real`: confirmo que o GOTCHA **só guarda instruções** e nunca executa nem se conecta a infraestrutura de terceiros?
+
+## 17. Validação de alternativas e decisões aprovadas
+
+Você aprovou as seis decisões da seção 16 e pediu que eu conferisse se existe solução mais adequada antes de implementar. Conclusão por item (padrões citados vêm do meu conhecimento; **não os reverifiquei nesta sessão**, só o que está marcado como testado):
+
+| Tema | Alternativa avaliada | Decisão |
+| --- | --- | --- |
+| Formato de troca de questões | **IMS QTI 3.0** (padrão de avaliações; tem interações de escolha, ordenação, associação, hotspot, "graphic gap match" e estímulo compartilhado, que correspondem aos nossos tipos) | **Manter o `.gotcha` como formato nativo** (Active Screen e Lab não existem em QTI) e **acrescentar QTI 3.0 como adaptador de importação e exportação** no Release 2, para interoperar com Moodle e outros. Registrado no TODO |
+| Contêiner do pacote | Arquivo SQLite único (como o Anki) | **ZIP + JSON**: legível, comparável e extraível sem ferramenta. O Anki usa ZIP com banco e mídia por hash, o que confirma a abordagem de mídia por hash |
+| Linguagem de condições do Active Screen | Inventar uma sintaxe própria × **JSON Logic** (formato JSON declarativo e sem código executável) | **Adotar a sintaxe do JSON Logic** (`{"and": [{"==": [{"var": "ip"}, "10.0.0.5"]}]}`) com um **avaliador próprio mínimo e em lista fechada**, sem dependência externa. Ganha-se um formato conhecido e portável sem confiar em biblioteca de terceiros para entrada não confiável |
+| Máquina de estados das telas | XState (MIT) | **Não adotar**: o motor próprio é pequeno (telas, ações, condições) e precisa rodar **igual** no Python e no navegador. Garanto a paridade com vetores de teste compartilhados |
+| Arrastar e soltar | Implementação própria × **`@dnd-kit`** (MIT, gratuito, com sensores de teclado e toque) | **Adotar `@dnd-kit`**: acessibilidade e toque prontos reduzem risco e esforço. Corrige a minha proposta anterior de fazer tudo à mão |
+| Sanitização de SVG | `nh3` (sanitizador de HTML) | **Não usar `nh3` para SVG**: usar `lxml` com lista de elementos e atributos permitidos, e exibir SVG **só por `<img>`** (scripts não executam nesse contexto) mais CSP restritiva |
+| Dimensões e validação de imagem | Biblioteca mínima só para tamanho (`imagesize`) × **Pillow** | **Pillow**: além de dimensões, verifica decodificação e aplica o limite contra *decompression bomb* |
+| Tipos TS a partir do backend | Manter dois modelos à mão | **Gerar JSON Schema do Pydantic e os tipos TS no build**, para não divergirem |
+| Editor de regiões | Biblioteca de canvas (Konva, Fabric) | **SVG com eventos de ponteiro, sem biblioteca**: são poucas formas e o ganho de uma dependência não compensa |
+
+### Formato "INDEX"
+
+Confirmado como **HTML salvo de sites de questões**. Já é coberto pelo importador de HTML (inclusive o arquivo `index.html` de uma página salva). O arquivo recebido é idêntico à página 1 já analisada e as imagens continuam relativas a uma pasta que não veio: para importá-las, envie a página **com a pasta de recursos em ZIP**. Para outros sites, o importador passa a ter **adaptadores por estrutura** (hoje: ExamTopics), cada um com seus testes.
+
+### Decisões aprovadas
+
+1. `self_assessed` como tipo de transição: **sim**.
+2. Hot Area em dois modos (região clicável e menus suspensos via Active Screen): **sim**.
+3. INDEX = HTML de sites de questões: **definido acima**.
+4. `.gotcha` como ZIP aberto e documentado: **sim**.
+5. Ordem das fases A a G: **sim**.
+6. Lab `real` só guarda instruções: **sim**.
+
+## 18. Estado da implementação
+
+Implementado e verificado (280 testes no backend, 29 na interface, `ruff` e `mypy --strict` limpos, e um teste ponta a ponta no navegador com todos os tipos).
+
+### O que existe
+
+| Fase | Entrega | Onde |
+| --- | --- | --- |
+| A | Modelo canônico v2 com união discriminada por `type`; registro de tipos; fingerprint de conteúdo; migração do modelo v1 e leitura de bancos antigos | `src/gotcha/qtypes/`, `qtypes/migrate.py` |
+| A | Recursos por SHA-256 com tipo detectado pelo conteúdo, dimensões (Pillow), limites de tamanho e de pixels, SVG sanitizado (lxml) e original preservado; contagem de referências e lista de órfãos | `qtypes/assets.py`, `storage/library.py` |
+| A | Pacote `.gotcha` (ZIP): manifesto com SHA-256 de cada arquivo, reconhecimento por conteúdo, limites contra ZIP malicioso, recusa de arquivo fora do manifesto, recurso ausente marcado como anexo ausente | `qtypes/package.py` |
+| B | Múltipla escolha e seleção (com crédito parcial), Build List, Drag and Drop, Hot Area (retângulo, círculo e polígono em coordenadas normalizadas), com corretor, validador, renderizador e editor | `qtypes/*.py`, `web/src/components/renderers`, `components/editor` |
+| B | Editor de regiões sobre a imagem (desenhar, mover, ajustar números, marcar corretas) | `components/editor/RegionEditor.tsx` |
+| C | Case Study como entidade com seções, guardado uma vez e editável em um lugar | `qtypes/case.py`, `pages/CasePage.tsx` |
+| D | Editor universal: blocos (texto, imagem, tabela, código, anexo) com reposicionar, substituir, remover, alt, largura, alinhamento e legenda; prévia vinda do servidor; conversão entre tipos; criação de questão | `pages/EditorPage.tsx`, `qtypes/templates.py` |
+| F | Active Screen: motor declarativo (componentes de lista fechada, estado, ações, condições JSON Logic), correção por reexecução no servidor e construtor por formulários | `qtypes/screen.py`, `qtypes/logic.py`, `web/src/lib/screen.ts` |
+| G | Lab nos três modos, sempre rotulados; o simulado reaproveita o motor do Active Screen; pontuação separada | `qtypes/interactive.py`, `renderers/lab.tsx` |
+
+### Desvios do desenho (e por quê)
+
+- Os campos de cada tipo ficam **no próprio objeto da questão**, e não em um `payload` aninhado. A união discriminada do Pydantic fica mais simples e o JSON Schema sai direto.
+- A propriedade `key` do envelope virou `position`, porque o Drag and Drop tem um campo `key` (o gabarito).
+- **Questões em branco contam 0 ponto** no percentual (antes eram ignoradas).
+- O resultado separa **três** pontuações: automática, autoavaliada e laboratório simulado.
+- O servidor também serve `POST /api/preview` (validação e prévia sem salvar), `GET /api/templates/{tipo}` e `POST /api/convert/{tipo}`, para que as regras de validade existam em um só lugar.
+
+### Paridade entre servidor e navegador
+
+O motor do Active Screen e as condições existem em Python e em TypeScript. Os dois passam nos **mesmos vetores de teste** (`tests/vectors/screen.json`). A geometria do Hot Area também é testada nos dois lados com os mesmos casos.
+
+### Critérios de aceitação (seção 13) e o que os cobre
+
+| # | Critério | Verificação |
+| --- | --- | --- |
+| 1 | Várias imagens por questão | `test_store`, `test_package` (prompt com imagem compartilhada e imagens em opções) |
+| 2 | Imagem compartilhada | `test_package`: 9 questões, 1 recurso, 9 referências |
+| 3 | Imagens preservadas na exportação | `test_package`: mesmos bytes originais |
+| 4 | `.gotcha` sem arquivos externos | `test_package_is_self_contained`, recusa de URL externa |
+| 5 | Hot Area após reimportação | `test_package`: mesma geometria e mesma correção |
+| 6 | Drag and Drop após reimportação | idem |
+| 7 | Build List preserva a sequência | idem |
+| 8 | Active Screen preserva estados e interações | idem e vetores compartilhados |
+| 9 | Case Study preserva o contexto | `test_case_study_context_is_stored_once_and_referenced` |
+| 10 | Lab distingue simulação de execução real | modo obrigatório, faixa fixa na tela, grupos de pontuação separados |
+| 11 | Edição manual de todos os tipos | editores por tipo; ida e volta pela API (`test_api`) e teste no navegador |
+| 12 | Reimportação não duplica | `test_reimport_does_not_duplicate...` e o teste no navegador (0 adicionadas, 30 ignoradas, 0 órfãos) |
+| 13 | Relatório do que não foi preservado | `conversion` por questão, recurso ausente vira anexo ausente com aviso |
+
+### O que ainda não está pronto
+
+- **Imagens do PDF não são extraídas.** Respostas em imagem continuam como anexo ausente até essa etapa (Fase E).
+- Alvos do **Drag and Drop sobre uma imagem de fundo**: o modelo e o validador suportam, mas a interface de prova e o editor ainda não posicionam os alvos sobre a imagem.
+- **Galeria de mídia** no editor (lista de todos os recursos usados, ausentes e órfãos): a API de órfãos existe, a tela não.
+- **Feedback configurável** do Build List e `min_items` do Drag and Drop não entram na correção.
+- **Importação de HTML de outros sites**: hoje só a estrutura do ExamTopics (adaptadores por site continuam no plano).
+- **Adaptador QTI 3.0** (Release 2).
+- O construtor do Active Screen **não importa interfaces originais**, só constrói telas novas; o componente `image` não tem seletor de imagem no editor.
+- Atalhos de teclado e leitor de tela foram considerados nos renderizadores (regiões focáveis, alternativas, arrastar com teclado via `@dnd-kit`), mas **não passaram por auditoria de acessibilidade**.

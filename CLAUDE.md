@@ -31,6 +31,7 @@ React + Vite (SPA servida pelo backend), FastAPI, SQLite (dados e fila de jobs),
 - Importadores têm testes de golden file com fixtures **sintéticas** em `tests/fixtures/`. Nunca commitar amostras reais nem conteúdo de exame.
 - Todo bug de importação vira um caso de teste antes da correção.
 - Código de spike é descartável: não entra no produto; o que se aproveita são decisões e casos de teste.
+- Todo tipo de questão novo exige, no mesmo lugar: modelo, validador, corretor, `public_view` sem gabarito, renderizador, editor e a suíte de contrato (`tests/test_qtypes.py`). Lógica que roda no servidor e no navegador (telas, condições, geometria) usa os **mesmos vetores de teste** nos dois lados.
 - Detalhes em `PLAN.md`, seção 4.
 
 ## Qualidade
@@ -53,7 +54,9 @@ uv run pytest
 - Arquivos enviados são não confiáveis: processar em subprocesso com limites de tempo e memória, sem acesso à rede.
 - Nunca commitar segredos. Usar `.env` (ignorado) e manter `.env.example` atualizado.
 - Escutar só em `127.0.0.1`; validar `Host` e `Origin` e usar token anti-CSRF, para que sites abertos no navegador não acessem a API local.
-- Sanitizar todo HTML de enunciados importados antes de renderizar.
+- Sanitizar todo HTML de enunciados importados antes de renderizar. SVG só passa pela lista de elementos permitidos (lxml) e é exibido só por `<img>`; o original nunca é exibido.
+- Telas e laboratórios são **dados** interpretados por um motor de lista fechada (sintaxe JSON Logic). Nunca usar `eval`, executar HTML/JS importado ou aceitar URL externa como recurso.
+- Estilos dentro de SVG com `viewBox` normalizado: nada de `outline` em px (vira anel gigante).
 
 ## Dados de domínio
 
