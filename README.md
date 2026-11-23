@@ -11,6 +11,7 @@ Plataforma para **importar simulados de certificação em vários formatos** (in
 - **Importação por plugins de formato.** O formato é detectado pelo conteúdo do arquivo, não pela extensão. Vários arquivos podem ser enviados de uma vez, e cada um vira um lote revisável separadamente.
 - **Servidor decide tempo e correção.** O gabarito não sai do servidor antes da hora.
 - **Sem dumps.** Nenhum conteúdo de exame vem embutido, nada é compartilhado entre contas, e o upload exige atestado de direito de uso.
+- **Orientado a testes.** Toda funcionalidade nasce de um teste que falha primeiro. Fixtures são sintéticas.
 
 ## Escopo do MVP
 
@@ -50,7 +51,8 @@ Arquivos protegidos são recusados com orientação para exportar pelo aplicativ
 
 ## Documentação
 
-- [`PLAN.md`](PLAN.md): fases, decisões, riscos e estimativas.
+- [`PLAN.md`](PLAN.md): fases, decisões, estratégia de testes (TDD), riscos e estimativas.
+- [`docs/VALIDACAO.md`](docs/VALIDACAO.md): sistemas similares, taxas de sucesso e classificação das ideias.
 - [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code neste repositório.
 
 ## TODO
@@ -64,6 +66,9 @@ Legenda: `[ ]` pendente · `[x]` concluído.
 - [ ] Reconstruir o scaffold: `pyproject.toml` (uv), `docker-compose.yml`, `.env.example`, `.editorconfig`
 - [ ] Configurar CI: `ruff`, `mypy --strict`, `pytest` e checagem que falha se houver dependência de IA
 - [ ] Registrar as decisões arquiteturais (ADRs) em `docs/adr/`
+- [x] Validar a ideia contra sistemas similares e classificar as funcionalidades (`docs/VALIDACAO.md`)
+- [ ] Configurar `hypothesis`, Playwright e a suíte de contrato de plugins (antes de qualquer importador)
+- [ ] Ler os termos da Avanset e registrar o que permitem
 
 ### Fase 0 — Spike (bloqueia a Fase 1)
 

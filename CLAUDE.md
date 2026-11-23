@@ -21,6 +21,16 @@ Projeto: GOTCHA, importador de simulados de certificação com exames cronometra
 
 React + Vite (SPA), FastAPI, PostgreSQL (dados, isolamento e fila de jobs), Docker Compose, monólito modular. Gerenciador Python: `uv`.
 
+## Desenvolvimento orientado a testes (obrigatório)
+
+- **Teste primeiro.** Nenhuma funcionalidade ou correção de bug é escrita antes do teste que a descreve. Ciclo: vermelho (ver o teste falhar pelo motivo certo) → verde (mínimo para passar) → refatorar.
+- Nomear testes pelo comportamento esperado, não pela implementação.
+- Plugins (importadores, tipos de questão) devem passar a mesma suíte de contrato.
+- Importadores têm testes de golden file com fixtures **sintéticas** em `tests/fixtures/`. Nunca commitar amostras reais nem conteúdo de exame.
+- Todo bug de importação vira um caso de teste antes da correção.
+- Código de spike é descartável: não entra no produto; o que se aproveita são decisões e casos de teste.
+- Detalhes em `PLAN.md`, seção 4.
+
 ## Qualidade
 
 Antes de commitar, rodar e passar:
