@@ -86,13 +86,14 @@ Legenda: `[ ]` pendente · `[x]` concluído.
 ### Fase 0 — Spike (bloqueia a Fase 1)
 
 - [x] Receber arquivos `.vce` de exemplo (4 recebidos; ver `docs/SPIKE-VCE.md`)
-- [ ] Obter 3 a 5 PDFs de simulado reais, de origens e versões diferentes (em `samples/`, fora do git)
+- [x] Receber e analisar 1 PDF de simulado (AZ-140, 762 páginas, 341 questões): segmentação 100% válida nas 216 com letras (`docs/SPIKE-PDF.md`)
+- [ ] Obter mais 2 a 4 PDFs de origens diferentes (inclusive exportados de `.vce` e escaneados), em `samples/`
 - [x] Classificar os `.vce` recebidos: resultado provisório **(b) somente via PDF exportado** (`docs/SPIKE-VCE.md`)
 - [ ] Confirmar o resultado do VCE exportando um dos `.vce` para PDF no app original
 - [x] Analisar uma página HTML salva (50 questões; metade com imagem): viável, mas faltou a pasta de imagens (`docs/SPIKE-HTML.md`)
 - [x] Analisar mais 2 páginas HTML e 1 TXT convertido por IA: exame multipágina, 53% das questões sem alternativas (`docs/SPIKE-HTML.md`)
 - [x] Decisão do usuário: **todos os formatos e tipos de questão recebidos entram no escopo**, incluindo PDF, e o app deve montar simulados a partir deles
-- [ ] Testar extração de PDF com `pdfplumber` e `pypdfium2` nos exemplos
+- [x] Comparar `pdfplumber` e `pypdfium2` no PDF recebido (`pypdfium2` ≈ 10× mais rápido; mesma extração, ordem de linhas diferente)
 - [ ] Medir a taxa de questões extraídas corretamente e fechar o gate de qualidade
 - [ ] Converter as descobertas em casos de teste com fixtures sintéticas
 

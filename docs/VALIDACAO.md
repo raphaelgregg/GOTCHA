@@ -4,7 +4,7 @@ Escopo: validar a ideia contra sistemas similares, tendo o **VCE** como base, es
 
 ## 1. Como ler as taxas de sucesso
 
-As porcentagens abaixo são **estimativas de julgamento**, baseadas na pesquisa da seção 2 e em conhecimento geral. **Não foram medidas.** Nenhum arquivo `.vce` ou PDF real foi testado. A Fase 0 (spike) existe para trocar estimativa por medição. Definição usada:
+As porcentagens abaixo são **estimativas de julgamento**, baseadas na pesquisa da seção 2 e em conhecimento geral. **Não foram medidas**, exceto onde indicado: já foram analisados 4 `.vce` (`docs/SPIKE-VCE.md`), 3 páginas HTML e 1 TXT (`docs/SPIKE-HTML.md`) e 1 PDF (`docs/SPIKE-PDF.md`), todos amostras únicas ou pequenas. A Fase 0 (spike) existe para trocar estimativa por medição. Definição usada:
 
 > **Taxa de sucesso** = probabilidade de a funcionalidade atingir seu critério de aceitação com os arquivos reais do usuário, dentro do prazo estimado.
 
@@ -39,8 +39,8 @@ A busca não localizou o texto dos termos da Avanset sobre engenharia reversa. O
 | --- | --- | --- |
 | Motor de exame cronometrado (tempo e correção no servidor) | **95%** | Baixa: problema conhecido |
 | Importar JSON do app / CSV / XLSX | **90 a 95%** | Variedade de colunas, resolvida pelo mapeamento |
-| Importar PDF com texto (extração + revisão manual) | **80 a 85%** utilizável após revisão; **60 a 75%** das questões corretas **sem** revisão | Layouts irregulares e alternativas quebradas entre páginas; sem IA para corrigir |
-| PDF com imagens nas questões | **65 a 75%** | Associar imagem à questão certa |
+| Importar PDF com texto (extração + revisão manual) | **85 a 92%** utilizável após revisão (antes 80 a 85%). **Medido em 1 PDF:** 216 de 216 questões com letras segmentadas corretamente | Só uma amostra, gerada de página web; outros geradores e PDFs exportados do VCE são desconhecidos |
+| PDF com imagens nas questões | **75 a 85%** | Cerca de 480 imagens de conteúdo e 1 523 decorativas repetidas na amostra; exige filtro e coordenadas |
 | Aiken / GIFT / Moodle XML (Fase 2) | **90%** | Formatos abertos e documentados |
 | **VCE direto (ler o `.vce`)** | **10 a 20%** | Formato fechado, sem especificação pública nem parser aberto, provável criptografia, risco legal |
 | **VCE via PDF exportado do app original** | **45 a 60%** | Usuário precisar da edição Pro; perda de tipos interativos; qualidade da impressão |
